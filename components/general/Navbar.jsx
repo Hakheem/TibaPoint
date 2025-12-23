@@ -13,6 +13,13 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  SignInButton,
+  SignUpButton,
+  SignedIn,
+  SignedOut,
+  UserButton,
+} from '@clerk/nextjs' 
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -34,15 +41,15 @@ const Navbar = () => {
     <div
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
-          ? "bg-white/90 dark:bg-gray-900/90 backdrop-blur-lg shadow-sm"
-          : "bg-white/80 dark:bg-gray-900/80 backdrop-blur-md"
+          ? "bg-white/70 dark:bg-gray-900/70 backdrop-blur-lg shadow"
+          : "bg-white/40 dark:bg-gray-900/40 backdrop-blur-md"
       }`}
     >
-      <nav className="container mx-auto  py-4">
+      <nav className="container mx-auto padded py-4">
         <div className="flex items-center justify-between">
           {/* Logo Section */}
           <Link href="/" className="flex items-center">
-            <div className="relative h-8 w-8 sm:h-10 sm:w-10">
+            <div className="relative size-8 sm:size-8">
               <Image
                 src="/logo.PNG"
                 alt="TibaPoint Logo"
@@ -56,9 +63,16 @@ const Navbar = () => {
 
           <div className="hidden md:flex items-center space-x-3">
             <ThemeToggle />
-            <Link href="/login">
-              <Button className="">Get Started</Button>
-            </Link>
+            <SignedOut>
+              <SignUpButton>
+                <Button variant='secondary' className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-white/30 dark:border-gray-700/30">
+                  Sign In
+                </Button>
+              </SignUpButton>
+            </SignedOut>
+            <SignedIn>
+              <UserButton/>
+            </SignedIn>
           </div>
 
           {/* Mobile Menu */}
@@ -66,12 +80,19 @@ const Navbar = () => {
             <ThemeToggle />
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="md:hidden">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="md:hidden bg-white/40 dark:bg-gray-900/40 backdrop-blur-sm"
+                >
                   <Menu className="h-10 w-10" />
                   <span className="sr-only">Toggle menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-75 sm:w-85 px-4">
+              <SheetContent 
+                side="right" 
+                className="w-75 sm:w-85 px-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl"
+              >
                 <SheetHeader>
                   <SheetTitle className="flex items-center">
                     <div className="relative h-8 w-8 mr-2">
@@ -90,7 +111,7 @@ const Navbar = () => {
                 <div className="flex flex-col space-y-4 mt-8">
                   <Link
                     href="/"
-                    className="flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50 dark:hover:bg-gray-800 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                    className="flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50/50 dark:hover:bg-gray-800/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                   >
                     <span className="font-medium">Home</span>
                   </Link>
@@ -106,7 +127,7 @@ const Navbar = () => {
 
                 <div className="absolute bottom-6 left-6 right-6">
                   <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                    © 2026 MediPass. All rights reserved.
+                    © {new Date().getFullYear()} TibaPoint. All rights reserved.
                   </p>
                 </div>
               </SheetContent>
