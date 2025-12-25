@@ -13,7 +13,8 @@ export default function Testimonials() {
       quote: "TibaPoint made it so easy to find a pediatrician for my daughter. Booked an appointment in minutes and the doctor was excellent. No more waiting in crowded clinics!",
       name: "Amina K.",
       location: "Nairobi",
-      rating: 5
+      rating: 5,
+      treatment: "Diabetes Patient"
     },
     {
       id: 2,
@@ -21,7 +22,8 @@ export default function Testimonials() {
       quote: "The video consultation feature is a game-changer. I consulted with a specialist from Mombasa while I was upcountry. Professional service and very affordable.",
       name: "Brian M.",
       location: "Kisumu",
-      rating: 5
+      rating: 5,
+      treatment: "Diabetes Patient"
     },
     {
       id: 3,
@@ -29,14 +31,15 @@ export default function Testimonials() {
       quote: "Finally, a platform that respects my time. The token system is brilliant—I bought a package and now I book appointments whenever I need them. Highly recommend!",
       name: "Grace W.",
       location: "Eldoret",
-      rating: 5
+      rating: 5,
+      treatment: "General Inquiry"
     }
   ]
 
   return (
     <section className="relative py-16 md:py-24 overflow-hidden">
-      {/* Background linear */}
-      <div className="absolute inset-0 bg-linear-to-b from-transparent via-blue-50/30 to-transparent dark:via-slate-900/30" />
+      {/* Background linear 
+      <div className="absolute inset-0 " />*/}
       
       {/* Decorative elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -72,14 +75,14 @@ export default function Testimonials() {
         <div className="md:hidden relative overflow-hidden">
           <div className="flex gap-6 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
             {testimonials.map((testimonial) => (
-              <div key={testimonial.id} className="shrink-0 w-[85vw] snap-center">
+              <div key={testimonial.id} className="shrink-0 w-[80vw] snap-center">
                 <TestimonialCard testimonial={testimonial} />
-              </div>
+              </div> 
             ))}
-          </div>
+          </div> 
           
           {/* Scroll indicator dots */}
-          <div className="flex justify-center gap-2 mt-6">
+          <div className="flex justify-center gap-2 mt-4">
             {testimonials.map((_, index) => (
               <button
                 key={index}
@@ -152,7 +155,7 @@ function TestimonialCard({ testimonial }) {
         {/* Bottom accent */}
         <div className="mt-6 pt-4 border-t border-border/50">
           <div className="text-xs text-muted-foreground uppercase tracking-wider">
-            Verified Patient
+            {testimonial.treatment}
           </div>
         </div>
       </CardContent>

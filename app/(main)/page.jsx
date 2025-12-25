@@ -4,7 +4,6 @@ import TrustBadgesSection from "./_components/TrustBadgesSection";
 import HowItWorks from "./_components/HowItWorks";
 import Testimonials from "./_components/Testimonials";
 import ForDoctors from "./_components/ForDoctors";
-import Features from "./_components/Features";
 import Pricing from "./_components/Pricing";
 import FAQSection from "./_components/FAQ";
 import CTASection from "./_components/CTA";
@@ -16,12 +15,11 @@ const page = () => {
 <HeroSection />
 <TrustBadgesSection />
 <HowItWorks />
-<Pricing />
-<FAQSection />
-<Features />
 <ForDoctors />
-<Testimonials />
+<Pricing />
 <CTASection />
+<Testimonials />
+<FAQSection />
     </div>
   )
 }

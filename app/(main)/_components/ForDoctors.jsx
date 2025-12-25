@@ -1,71 +1,113 @@
-'use client'
+"use client";
 
-import { TrendingUp, Calendar, DollarSign, Award, BarChart3, ShieldCheck, ArrowRight } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  TrendingUp,
+  Calendar,
+  DollarSign,
+  Award,
+  BarChart3,
+  ShieldCheck,
+  ArrowRight,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
 
 export default function ForDoctors() {
   const benefits = [
     {
       icon: <TrendingUp className="h-5 w-5" />,
       title: "Expand Your Reach",
-      description: "Connect with thousands of patients actively seeking care",
+      description:
+        "Access a growing network of patients looking for trusted healthcare providers.",
       color: "text-blue-600 dark:text-blue-400",
-      bgColor: "bg-blue-50 dark:bg-blue-950/30"
+      bgColor: "bg-blue-50 dark:bg-blue-950/30",
     },
     {
       icon: <Calendar className="h-5 w-5" />,
       title: "Smart Scheduling",
-      description: "Automated calendar management and appointment reminders",
+      description:
+        "Seamless appointment management with automated reminders and real-time availability updates.",
       color: "text-teal-600 dark:text-teal-400",
-      bgColor: "bg-teal-50 dark:bg-teal-950/30"
+      bgColor: "bg-teal-50 dark:bg-teal-950/30",
     },
     {
       icon: <DollarSign className="h-5 w-5" />,
       title: "Transparent Earnings",
-      description: "Weekly payouts with clear commission structure",
+      description:
+        "Keep more of your earnings with our competitive 10% commission and guaranteed weekly payouts.",
       color: "text-emerald-600 dark:text-emerald-400",
-      bgColor: "bg-emerald-50 dark:bg-emerald-950/30"
+      bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
     },
     {
       icon: <Award className="h-5 w-5" />,
       title: "Build Your Brand",
-      description: "Showcase your expertise with a professional profile",
+      description:
+        "Create a verified professional profile that highlights your qualifications, experience, and patient reviews.",
       color: "text-purple-600 dark:text-purple-400",
-      bgColor: "bg-purple-50 dark:bg-purple-950/30"
+      bgColor: "bg-purple-50 dark:bg-purple-950/30",
     },
     {
       icon: <BarChart3 className="h-5 w-5" />,
       title: "Patient Insights",
-      description: "Track your performance with detailed analytics",
+      description:
+        "Actionable analytics dashboard showing patient feedback, appointment trends, and revenue performance.",
       color: "text-orange-600 dark:text-orange-400",
-      bgColor: "bg-orange-50 dark:bg-orange-950/30"
+      bgColor: "bg-orange-50 dark:bg-orange-950/30",
     },
     {
       icon: <ShieldCheck className="h-5 w-5" />,
       title: "Verified Badge",
-      description: "Stand out with our doctor verification system",
+      description:
+        "Earn a verified credential badge that builds immediate trust and distinguishes you as a certified professional.",
       color: "text-indigo-600 dark:text-indigo-400",
-      bgColor: "bg-indigo-50 dark:bg-indigo-950/30"
-    }
-  ]
+      bgColor: "bg-indigo-50 dark:bg-indigo-950/30",
+    },
+  ];
 
   return (
-    <section className="relative py-16 md:py-24 bg-linear-to-b from-transparent via-teal-50/30 to-transparent dark:via-teal-950/10 overflow-hidden">
+    <section className="relative py-16 md:py-20 bg-linear-to-b from-transparent via-teal-50/30 to-transparent dark:via-teal-950/10 overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/4 -left-48 w-96 h-96 bg-teal-200/20 dark:bg-teal-500/5 rounded-full blur-3xl" />
         <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-blue-200/20 dark:bg-blue-500/5 rounded-full blur-3xl" />
       </div>
 
+
+<div className='text-center mx-auto max-w-2xl md:max-w-3xl lg:max-w-4xl space-y-3 mb-8 '>
+
+  {/* Badge */}
+  <div className="text-center justify-center">
+    <Badge className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-xs sm:text-sm font-medium text-primary dark:bg-teal-500/20 dark:text-teal-300">
+      For Healthcare Providers
+    </Badge>
+  </div>
+
+  {/* Title */}
+  <div className="text-center">
+    <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+      Your Leading{" "}
+      <span className="text-gradient-primary">
+        Healthcare Platform
+      </span>
+    </h2>
+    <p className="text-base  text-muted-foreground mx-auto max-w-2xl md:max-w-3xl">
+      Join thousands of medical professionals who are enhancing
+      patient care while optimizing their practice management with our
+      purpose-built healthcare platform.
+    </p>
+  </div>
+</div>
+
       <div className="container padded mx-auto relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           {/* Left - Image */}
           <div className="relative order-2 lg:order-1">
-            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl border border-border">
-              {/* Placeholder linear */}
+            <div className="relative aspect-[4/3] rounded-2xl overflow-hidden shadow border border-border">
+              {/* Placeholder */}
               <div className="absolute inset-0 bg-linear-to-br from-teal-500/20 via-blue-500/10 to-transparent" />
-              
+
               {/* Placeholder icon */}
               <div className="absolute inset-0 flex items-center justify-center">
                 <div className="bg-teal-50 dark:bg-teal-950/30 p-8 rounded-2xl">
@@ -73,125 +115,157 @@ export default function ForDoctors() {
                 </div>
               </div>
 
-              {/* Uncomment when you have image:
               <Image
-                src="/doctor-professional.png"
+                src="/doctors.png"
                 alt="Professional doctor using TibaPoint"
                 fill
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"
               />
-              */}
             </div>
 
             {/* Stats Cards */}
-            <div className="absolute -bottom-6 -left-6 bg-card rounded-xl p-4 shadow-xl border border-border">
-              <p className="text-3xl font-bold text-foreground">500+</p>
-              <p className="text-sm text-muted-foreground">Active Doctors</p>
-            </div>
+            {/* <div className="absolute -bottom-6 -left-6 bg-card rounded-xl p-4 shadow-sm border border-border">
+              <p className="text-2xl font-bold text-foreground">500+</p>
+              <p className="text-sm text-muted-foreground">Active Users</p>
+            </div> */}
 
-            <div className="absolute -top-6 -right-6 bg-card rounded-xl p-4 shadow-xl border border-border">
-              <p className="text-3xl font-bold text-success">15%</p>
+            <div className="absolute -top-6 -right-6 bg-card rounded-xl p-4 shadow-sm border border-border">
+              <p className="text-2xl font-bold text-success">12%</p>
               <p className="text-sm text-muted-foreground">Commission</p>
             </div>
+
+              {/* CTA Button */}
+        <div className="text-center absolute -bottom-6 -left-6">
+          <Button
+            size="lg"
+            className="inline-flex items-center justify-center gap-2 py-6 bg-gradient-primary font-medium duration-300 "
+          >
+            Get Verified & Start Seeing Patients
+            <ArrowRight className="h-5 w-5" />
+          </Button>
+        </div>
 
             {/* Glow effect */}
             <div className="absolute -inset-8 bg-linear-to-br from-teal-500/20 to-blue-500/20 rounded-3xl blur-3xl -z-10 opacity-50" />
           </div>
 
-          {/* Right - Content */}
-          <div className="space-y-8 order-1 lg:order-2">
-            {/* Badge */}
-            <div className="inline-block">
-              <span className="text-xs md:text-sm font-semibold tracking-wider uppercase text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-950/30 px-4 py-2 rounded-full">
-                For Healthcare Providers
-              </span>
-            </div>
+          {/* Right */}
+          <div className="space-y-6 order-1 lg:order-2">
+          
 
-            {/* Title */}
-            <div>
-              <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
-                Join Kenya's Leading{' '}
-                <span className="text-linear-primary">Healthcare Platform</span>
-              </h2>
-              <p className="text-base md:text-lg text-muted-foreground">
-                Grow your practice, reach more patients, and manage appointments effortlessly.
-              </p>
-            </div>
+            {/* Mobile: Grid layout (phones) */}
+            <div className="block md:hidden">
+              <div className="grid grid-cols-2 gap-4">
+                {benefits.map((benefit, index) => (
+                  <div
+                    key={index}
+                    className="group flex gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/20 dark:hover:border-teal-500/30 hover:shadow-md transition-all duration-300"
+                  >
+                    {/* Icon Container - Hidden on phones */}
+                    <div
+                      className={`${benefit.bgColor} h-10 w-10 rounded-lg hidden sm:flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
+                    >
+                      <div className={benefit.color}>{benefit.icon}</div>
+                    </div>
 
-            {/* Benefits Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {benefits.map((benefit, index) => (
-                <div
-                  key={index}
-                  className="group flex gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/20 dark:hover:border-teal-500/30 hover:shadow-lg transition-all duration-300"
-                >
-                  <div className={`${benefit.bgColor} h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}>
-                    <div className={benefit.color}>
-                      {benefit.icon}
+                    {/* Content */}
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-1 text-sm">
+                        {benefit.title}
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        {benefit.description}
+                      </p>
                     </div>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-foreground mb-1 text-sm md:text-base">
-                      {benefit.title}
-                    </h4>
-                    <p className="text-xs md:text-sm text-muted-foreground">
-                      {benefit.description}
-                    </p>
-                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Tablet: Slider */}
+            <div className="hidden md:block lg:hidden">
+              <div className="relative overflow-hidden">
+                <div className="flex gap-4 overflow-x-auto pb-4 snap-x snap-mandatory scrollbar-hide">
+                  {benefits.map((benefit, index) => (
+                    <div key={index} className="shrink-0 w-[35%] snap-center">
+                      <div className="group flex gap-3 p-6 rounded-xl bg-card border border-border hover:border-primary/20 dark:hover:border-teal-500/30 hover:shadow-md transition-all duration-300 h-full">
+                        {/* Icon Container */}
+                        <div
+                          className={`${benefit.bgColor} h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
+                        >
+                          <div className={benefit.color}>{benefit.icon}</div>
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <h4 className="font-semibold text-foreground mb-1 text-base">
+                            {benefit.title}
+                          </h4>
+                          <p className="text-sm text-muted-foreground">
+                            {benefit.description}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+
+                {/* Scroll indicator dots */}
+                <div className="flex justify-center gap-2 mt-4">
+                  {benefits.map((_, index) => (
+                    <button
+                      key={index}
+                      className="w-2 h-2 rounded-full bg-gray-300 dark:bg-gray-700 transition-all duration-300"
+                      aria-label={`Go to benefit ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </div>
             </div>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Link href="/register-doctor">
-                <button className="group inline-flex items-center justify-center gap-2 px-6 py-3 bg-linear-primary text-white rounded-lg font-semibold hover:shadow-lg hover:scale-105 transition-all duration-300 w-full sm:w-auto">
-                  Register as a Doctor
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </button>
-              </Link>
-              
-              <Link href="/doctor-signin">
-                <button className="inline-flex items-center justify-center gap-2 px-6 py-3 border-2 border-primary dark:border-teal-500 text-primary dark:text-teal-400 rounded-lg font-semibold hover:bg-primary/5 dark:hover:bg-teal-500/10 transition-all duration-300 w-full sm:w-auto">
-                  Sign in to Dashboard →
-                </button>
-              </Link>
-            </div>
+            {/* Desktop: Grid layout  */}
+            <div className="hidden lg:block">
+              <div className="grid grid-cols-2 gap-4">
+                {benefits.map((benefit, index) => (
+                  <div
+                    key={index}
+                    className="group flex gap-3 p-4 rounded-xl bg-card border border-border hover:border-primary/20 dark:hover:border-teal-500/30 hover:shadow-md transition-all duration-300"
+                  >
+                    {/* Icon Container */}
+                    <div
+                      className={`${benefit.bgColor} h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
+                    >
+                      <div className={benefit.color}>{benefit.icon}</div>
+                    </div>
 
-            {/* Small text */}
-            <p className="text-xs text-muted-foreground">
-              Already registered?{' '}
-              <Link href="/doctor-signin" className="text-primary dark:text-teal-400 hover:underline font-medium">
-                Sign in to your dashboard
-              </Link>
-            </p>
+                    {/* Content */}
+                    <div>
+                      <h4 className="font-semibold text-foreground mb-1 text-base">
+                        {benefit.title}
+                      </h4>
+                      <p className="text-sm text-muted-foreground">
+                        {benefit.description}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Trust Section */}
-        <div className="mt-16 pt-12 border-t border-border">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 md:gap-8 text-center">
-            <div>
-              <p className="text-3xl md:text-4xl font-bold text-foreground mb-2">10K+</p>
-              <p className="text-sm text-muted-foreground">Monthly Bookings</p>
-            </div>
-            <div>
-              <p className="text-3xl md:text-4xl font-bold text-foreground mb-2">500+</p>
-              <p className="text-sm text-muted-foreground">Registered Doctors</p>
-            </div>
-            <div>
-              <p className="text-3xl md:text-4xl font-bold text-foreground mb-2">4.9/5</p>
-              <p className="text-sm text-muted-foreground">Doctor Rating</p>
-            </div>
-            <div>
-              <p className="text-3xl md:text-4xl font-bold text-foreground mb-2">24/7</p>
-              <p className="text-sm text-muted-foreground">Platform Support</p>
-            </div>
-          </div>
-        </div>
+      
       </div>
-    </section>
-  )
-}
 
+      <style jsx>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
+    </section>
+  );
+}

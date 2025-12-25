@@ -6,7 +6,7 @@ import Link from 'next/link'
 
 export default function CTASection() {
   return (
-    <section className="relative py-16 md:py-24 overflow-hidden">
+    <section className="relative py-16 mt-12 mb-8 overflow-hidden container rounded-2xl max-w-6xl mx-auto ">
       {/* Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary via-blue-600 to-teal-500 dark:from-primary/90 dark:via-blue-600/90 dark:to-teal-500/90" />
       
@@ -25,11 +25,11 @@ export default function CTASection() {
         <div className="max-w-4xl mx-auto text-center">
           {/* Main Content */}
           <div className="space-y-6 mb-8">
-            <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+            <h2 className="text-3xl md:text-4xl  font-bold text-[#f5f5f5] ">
               Ready to Experience Hassle-Free Healthcare?
             </h2>
             <p className="text-lg md:text-xl text-white/90 max-w-2xl mx-auto">
-              Join thousands of Kenyans who trust TibaPoint for quality medical care.
+              Join thousands of users who trust TibaPoint for quality medical care.
             </p>
           </div>
 
@@ -38,7 +38,7 @@ export default function CTASection() {
             <Link href="/sign-up">
               <Button 
                 size="lg" 
-                className="bg-white text-primary hover:bg-white/90 hover:scale-105 transition-all duration-300 shadow-xl px-8 py-6 text-base md:text-lg font-semibold group"
+                className=" transition-all duration-300 shadow-md px-8 py-6 text-base md:text-lg font-semibold group"
               >
                 Create Free Account
                 <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
@@ -49,7 +49,7 @@ export default function CTASection() {
               <Button 
                 size="lg"
                 variant="outline"
-                className="border-2 border-white text-white hover:bg-white/10 hover:scale-105 transition-all duration-300 px-8 py-6 text-base md:text-lg font-semibold"
+                className=" transition-all duration-300 px-8 py-6 text-base md:text-lg font-semibold"
               >
                 Talk to Sales
               </Button>

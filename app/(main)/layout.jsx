@@ -15,7 +15,7 @@ export default function MainLayout({ children }) {
       <main className="text-[#100C08] dark:text-[#f0f8ff] ">
           {children}
       </main>
-      <Footer/>
+      {/* <Footer/> */}
     </div>
   );
 }

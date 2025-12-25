@@ -8,7 +8,7 @@ import Link from "next/link";
 
 export default function HeroSection() {
   return (
-    <section className="relative pt-28 py-12 sm:mt-0 sm:py-16 md:pt-20 overflow-hidden bg-linear-to-b from-blue-100 via-blue-50 to-transparent dark:from-primary/30 dark:via-primary/10 dark:to-transparent">
+    <section className="relative pt-24 py-12 sm:mt-0 sm:py-16 md:pt-30 lg:pt-12 overflow-hidden bg-linear-to-b from-blue-100 via-blue-50 to-transparent dark:from-primary/30 dark:via-primary/10 dark:to-transparent">
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 size-40 rounded-full bg-primary/10 blur-2xl" />
         <div className="absolute -bottom-40 -left-40 size-40 rounded-full bg-primary/5 dark:bg-teal-300/10 blur-2xl" />
@@ -169,7 +169,7 @@ export default function HeroSection() {
               </div>
 
               {/* Main Image Container */}
-              <div className="relative overflow-hidden h-75 sm:h-100 md:h-140">
+              <div className="relative overflow-hidden h-75 sm:h-100 md:h-150">
                 <div className="absolute inset-0 bg-linear-to-t from-background/10 via-transparent to-transparent z-10" />
                 <Image
                   src="/header_image.png"
