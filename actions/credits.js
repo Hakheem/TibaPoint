@@ -10,7 +10,7 @@ import { revalidatePath } from 'next/cache'
 const CREDIT_PLAN = {
     Starter: 10,    // 5 consultations * 2
     Family: 16,     // 8 consultations * 2
-    Wellness: 20    // 10 consultations * 2
+    Wellness: 20    // 10 consultations * 2 
 }
 
 export async function checkAndAllocateCredits(user) {

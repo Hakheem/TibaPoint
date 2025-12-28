@@ -1,4 +1,4 @@
-// app/payment/success/page.tsx
+// app/payment/success/page.jsx - PURE JS VERSION
 
 'use client'
 
@@ -14,7 +14,7 @@ export default function PaymentSuccessPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [packageData, setPackageData] = useState<any>(null)
+  const [packageData, setPackageData] = useState(null) // ✅ REMOVED "any"
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -41,7 +41,7 @@ export default function PaymentSuccessPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800">
         <Card className="w-full max-w-md mx-4">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <Loader2 className="h-12 w-12 text-primary animate-spin mb-4" />
@@ -55,7 +55,7 @@ export default function PaymentSuccessPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800">
         <Card className="w-full max-w-md mx-4">
           <CardContent className="flex flex-col items-center justify-center py-12">
             <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center mb-4">
@@ -71,8 +71,12 @@ export default function PaymentSuccessPage() {
     )
   }
 
+  // Add null check for packageData before accessing properties
+  const activePackage = packageData?.activePackage || null
+  const consultationsAvailable = packageData?.consultationsAvailable || 0
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800 p-4">
       <Card className="w-full max-w-2xl">
         <CardHeader className="text-center pb-4">
           <div className="flex justify-center mb-4">
@@ -88,17 +92,17 @@ export default function PaymentSuccessPage() {
           </p>
         </CardHeader>
 
-        <CardContent className="space-y-6">
-          {/* Package Details */}
-          {packageData?.activePackage && (
-            <div className="bg-linear-to-br from-primary/5 to-blue-50/50 dark:from-primary/10 dark:to-slate-800/50 rounded-lg p-6 space-y-4">
+        <CardContent className="space-y-6"> 
+          {/* Package Details - Only show if activePackage exists */}
+          {activePackage && ( 
+            <div className="bg-gradient-to-br from-primary/5 to-blue-50/50 dark:from-primary/10 dark:to-slate-800/50 rounded-lg p-6 space-y-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Package className="h-6 w-6 text-primary" />
                   <div>
                     <p className="text-sm text-muted-foreground">Active Package</p>
                     <p className="font-bold text-xl">
-                      {packageData.activePackage.type}
+                      {activePackage.name || activePackage.type}
                     </p>
                   </div>
                 </div>
@@ -111,35 +115,37 @@ export default function PaymentSuccessPage() {
                 <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
                   <p className="text-sm text-muted-foreground mb-1">Total Consultations</p>
                   <p className="text-2xl font-bold text-primary">
-                    {packageData.activePackage.consultations}
+                    {activePackage.consultations || 0}
                   </p>
                 </div>
                 
                 <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
                   <p className="text-sm text-muted-foreground mb-1">Remaining</p>
                   <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {Math.floor(packageData.activePackage.consultationsRemaining)}
+                    {Math.floor(activePackage.consultationsRemaining || 0)}
                   </p>
                 </div>
                 
                 <div className="bg-white dark:bg-slate-800 rounded-lg p-4">
                   <p className="text-sm text-muted-foreground mb-1">Used</p>
                   <p className="text-2xl font-bold text-slate-600 dark:text-slate-400">
-                    {Math.floor(packageData.activePackage.consultationsUsed)}
+                    {Math.floor(activePackage.consultationsUsed || 0)}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
-                <Calendar className="h-4 w-4" />
-                <span>
-                  Valid until {new Date(packageData.activePackage.validUntil).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </span>
-              </div>
+              {activePackage.validUntil && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground pt-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>
+                    Valid until {new Date(activePackage.validUntil).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
+                </div>
+              )}
             </div>
           )}
 
@@ -153,7 +159,7 @@ export default function PaymentSuccessPage() {
                 </span>
               </div>
               <span className="text-2xl font-bold text-primary">
-                {packageData?.consultationsAvailable || 0}
+                {consultationsAvailable}
               </span>
             </div>
           </div>
@@ -162,7 +168,7 @@ export default function PaymentSuccessPage() {
           <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <Button 
               onClick={() => router.push('/doctors')}
-              className="flex-1 bg-linear-primary"
+              className="flex-1 bg-gradient-to-r from-blue-600 to-teal-500 text-white"
               size="lg"
             >
               Book a Consultation
@@ -180,11 +186,11 @@ export default function PaymentSuccessPage() {
           {/* Additional Info */}
           <div className="bg-blue-50 dark:bg-slate-800/50 rounded-lg p-4 mt-4">
             <p className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">What's next?</span>
+              <span className="font-semibold text-black dark:text-white">What's next?</span>
               <br />
               You can now book consultations with any verified doctor on our platform. 
-              Each consultation uses 1 of your available consultations. Your package is 
-              valid for 1 full year from today.
+              Each consultation uses 2 credits (1 consultation). Your package is 
+              valid for 30 days from today.
             </p>
           </div>
         </CardContent>

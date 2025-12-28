@@ -173,7 +173,7 @@ export async function GET(req) {
       { status: 500 }
     )
   }
-}
+} 
 
 // Manual trigger
 export async function POST(req) {

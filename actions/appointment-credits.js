@@ -12,7 +12,7 @@ export async function deductCreditsForAppointment(userId, appointmentId) {
 
   return await prisma.$transaction(async (tx) => {
     // Get user with their active package
-    const user = await tx.user.findUnique({
+    const user = await tx.user.findUnique({ 
       where: { id: userId }, 
       include: {
         creditPackages: {

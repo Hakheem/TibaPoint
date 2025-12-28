@@ -26,7 +26,7 @@ export default function Pricing() {
         "Video or in-person visits",
         "Access your medical records anytime",
         "Whatsapp and email support",
-        "Valid for 1 full year"
+        "Valid for 30 days"
       ],
       popular: false
     },
@@ -246,13 +246,13 @@ export default function Pricing() {
                     </Button>
                   </div>
                 </div>
-              </Card>
+              </Card> 
             </div>
           ))}
         </div>
 
         <div className="text-center mt-8 md:mt-12 space-y-4">
-          <Badge className="bg-linear-to-r from-primary/10 to-primary/5 text-primary dark:from-teal-500/20 dark:to-teal-500/10 px-3 py-2 md:px-4 md:py-2 w-fit max-w-sm md:max-w-none mx-auto">
+          <Badge className="bg-primary/10 text-[#333] dark:text-[#f5f5f5] px-3 py-2 md:px-4 md:py-2 w-fit max-w-sm md:max-w-none mx-auto">
             <Sparkles className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2 shrink-0" />
             <span className="text-xs md:text-sm">
               <span className="font-bold text-gradient-primary">New users get 1 FREE consultation</span>

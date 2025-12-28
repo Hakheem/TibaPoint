@@ -1,4 +1,3 @@
-// app/actions/onboarding.js
 'use server'
 
 import { auth } from '@clerk/nextjs/server'
