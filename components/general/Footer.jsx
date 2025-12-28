@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 import { Heart, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react'
+import { Input } from '../ui/input'
 
 export default function Footer() {
   return (
@@ -8,13 +9,13 @@ export default function Footer() {
       <div className="container padded mx-auto">
         <div className="py-8 md:py-12">
           {/* Main Footer Content */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {/* Brand Column */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <div className="relative size-8">
                   <img
-                    src="/logo.PNG"
+                    src="/logo.png"
                     alt="TibaPoint Logo"
                     className="object-contain rounded-md"
                   />
@@ -82,7 +83,7 @@ export default function Footer() {
                   </Link>
                 </li>
               </ul>
-            </div>
+            </div> 
 
             {/* Newsletter */}
             <div>
@@ -90,13 +91,13 @@ export default function Footer() {
               <p className="text-sm text-muted-foreground mb-4">
                 Get health tips and updates directly to your inbox.
               </p>
-              <div className="flex gap-2">
-                <input
+              <div className="flex flex-col lg:flex-row gap-2">
+                <Input
                   type="email"
                   placeholder="Your email"
-                  className="flex-1 px-3 py-2 text-sm border border-input rounded-md bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="flex-1 px-3 py-2 text-sm border-primary/50 "
                 />
-                <Button size="sm" className="bg-gradient-primary">
+                <Button className="bg-gradient-primary">
                   Subscribe
                 </Button>
               </div>

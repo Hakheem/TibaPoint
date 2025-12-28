@@ -1,12 +1,18 @@
 'use client'
 
-import { Check, Sparkles, ArrowRight } from 'lucide-react'
+import { Check, Sparkles } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import Link from 'next/link'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useUser, useAuth } from '@clerk/nextjs'
+import { useState } from 'react'
+import { createCheckoutSession } from '@/actions/checkout'
 
 export default function Pricing() {
+  const { user } = useUser()
+  const { openSignIn } = useAuth()
+  const [loading, setLoading] = useState(null)
+
   const packages = [
     { 
       name: "Starter",
@@ -27,11 +33,11 @@ export default function Pricing() {
     {
       name: "Family",
       badge: "BEST VALUE",
-      consultations: 15,
-      price: 6750,
-      originalPrice: 7500,
-      pricePerConsultation: 450,
-      savings: "Save 10%",
+      consultations: 8,
+      price: 3800,
+      originalPrice: 4000,
+      pricePerConsultation: 475,
+      savings: "Save 5%",
       features: [
         "Everything in Starter",
         "Share with family members",
@@ -44,11 +50,11 @@ export default function Pricing() {
     {
       name: "Wellness",
       badge: "BEST FOR CHRONIC CARE",
-      consultations: 30,
-      price: 12000,
-      originalPrice: 15000,
-      pricePerConsultation: 400,
-      savings: "Save 20%",
+      consultations: 10,
+      price: 4500,
+      originalPrice: 5000,
+      pricePerConsultation: 450,
+      savings: "Save 10%",
       features: [
         "Everything in Family",
         "Dedicated care coordinator",
@@ -60,8 +66,36 @@ export default function Pricing() {
     }
   ]
 
+  const handleSubscribe = async (packageName) => {
+    // Check authentication
+    if (!user) {
+      openSignIn({
+        redirectUrl: `${window.location.origin}/pricing`,
+      })
+      return
+    }
+
+    setLoading(packageName)
+
+    try {
+      // Call the server action to create InstaSend checkout
+      const result = await createCheckoutSession(packageName)
+      
+      if (result.success && result.url) {
+        // Redirect to InstaSend payment page
+        window.location.href = result.url
+      } else {
+        throw new Error(result.error || 'Failed to create checkout session')
+      }
+    } catch (error) {
+      console.error('Error:', error)
+      alert(error.message || 'Something went wrong. Please try again.')
+      setLoading(null)
+    }
+  }
+
   return (
-    <section className="relative py-20 bg-gradient-to-b from-transparent via-blue-50/30 to-transparent dark:via-slate-900/30">
+    <section className="relative py-20 bg-linear-to-b from-transparent via-blue-50/30 to-transparent dark:via-slate-900/30">
       {/* Background decoration */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-1/2 left-1/4 w-80 h-80 bg-blue-200/20 dark:bg-blue-500/5 rounded-full blur-3xl" />
@@ -71,12 +105,12 @@ export default function Pricing() {
       <div className="container padded mx-auto relative z-10">
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16 space-y-3">
-          <div className="inline-block ">
+          <div className="inline-block">
             <Badge className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold text-primary dark:bg-teal-500/20 dark:text-teal-300">
               Simple Pricing
             </Badge>
           </div>
-          <h2 className="text-3xl md:text-4xl font-bold text-foreground ">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground">
             Choose Your{' '}
             <span className="text-gradient-primary">Healthcare Plan</span>
           </h2>
@@ -86,10 +120,10 @@ export default function Pricing() {
         </div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {packages.map((pkg, index) => (
             <div className="relative" key={index}>
-              {/* Package Badge  */}
+              {/* Package Badge */}
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-10">
                 <Badge 
                   className={`text-xs font-bold tracking-wider px-3 py-1.5 ${
@@ -161,7 +195,7 @@ export default function Pricing() {
                 </CardHeader>
 
                 {/* Features List */}
-                <CardContent className="flex-grow py-3 px-6 relative z-10">
+                <CardContent className="grow py-3 px-6 relative z-10">
                   <ul className="space-y-2">
                     {pkg.features.map((feature, idx) => (
                       <li key={idx} className="flex items-start gap-2">
@@ -169,7 +203,7 @@ export default function Pricing() {
                           pkg.popular 
                             ? 'bg-primary/10 dark:bg-teal-500/20 text-primary dark:text-teal-400' 
                             : 'bg-muted text-muted-foreground'
-                        } h-4 w-4 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5`}>
+                        } h-4 w-4 rounded-full flex items-center justify-center shrink-0 mt-0.5`}>
                           <Check className="h-2.5 w-2.5" />
                         </div>
                         <span className="text-xs text-foreground leading-snug">{feature}</span>
@@ -191,18 +225,25 @@ export default function Pricing() {
                       </div>
                     )}
                     
-                    <Link href="/sign-up" className="w-full block">
-                      <Button 
-                        className={`w-full ${
-                          pkg.popular 
-                            ? 'bg-gradient-primary hover:opacity-90' 
-                            : 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 dark:bg-secondary dark:text-secondary-foreground dark:border dark:border-border'
-                        }`}
-                        size="default"
-                      >
-                        {pkg.popular ? 'Get Started' : `Choose ${pkg.name}`}
-                      </Button>
-                    </Link>
+                    <Button 
+                      onClick={() => handleSubscribe(pkg.name)}
+                      disabled={loading === pkg.name}
+                      className={`w-full ${
+                        pkg.popular 
+                          ? 'bg-gradient-primary hover:opacity-90' 
+                          : 'bg-primary/10 hover:bg-primary/20 text-primary border-primary/20 dark:bg-secondary dark:text-secondary-foreground dark:border dark:border-border'
+                      }`}
+                      size="default"
+                    >
+                      {loading === pkg.name ? (
+                        <>
+                          <span className="animate-spin mr-2">⏳</span>
+                          Processing...
+                        </>
+                      ) : (
+                        pkg.popular ? 'Get Started' : `Choose ${pkg.name}`
+                      )}
+                    </Button>
                   </div>
                 </div>
               </Card>
@@ -211,9 +252,13 @@ export default function Pricing() {
         </div>
 
         <div className="text-center mt-8 md:mt-12 space-y-4">
-          <Badge className="bg-gradient-to-r from-primary/10 to-primary/5 text-primary dark:from-teal-500/20 dark:to-teal-500/10  px-4 py-2">
-            <Sparkles className="h-4 w-4 mr-2" />
-            <span className="font-bold text-gradient-primary ">New users get 1 FREE consultation</span> to try our platform (valid for 90 days)
+          <Badge className="bg-linear-to-r from-primary/10 to-primary/5 text-primary dark:from-teal-500/20 dark:to-teal-500/10 px-3 py-2 md:px-4 md:py-2 w-fit max-w-sm md:max-w-none mx-auto">
+            <Sparkles className="h-3 w-3 md:h-4 md:w-4 mr-1.5 md:mr-2 shrink-0" />
+            <span className="text-xs md:text-sm">
+              <span className="font-bold text-gradient-primary">New users get 1 FREE consultation</span>
+              <span className="hidden sm:inline"> to try our platform (valid for 90 days)</span>
+              <span className="sm:hidden"> (90 days)</span>
+            </span>
           </Badge>
           
           <p className="text-sm text-muted-foreground">
@@ -224,5 +269,4 @@ export default function Pricing() {
     </section>
   )
 }
-
 

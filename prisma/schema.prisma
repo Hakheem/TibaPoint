@@ -1,0 +1,581 @@
+
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum UserRole {
+  UNASSIGNED
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CONFIRMED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum CancelledBy {
+  PATIENT
+  DOCTOR
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum DoctorStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
+}
+
+enum PackageType {
+  STARTER
+  FAMILY
+  WELLNESS
+}
+
+enum PackageStatus {
+  ACTIVE
+  EXPIRED
+  REFUNDED
+}
+
+enum TransactionType {
+  PURCHASE
+  SPENT
+  REFUND
+  BONUS
+  PENALTY
+  EXPIRY
+  WELCOME_BONUS
+}
+
+enum RefundReason {
+  LATE_CANCELLATION
+  DOCTOR_NO_SHOW
+  QUALITY_ISSUE
+  TECHNICAL_ISSUE
+  UNUSED_PACKAGE
+  ADMIN_REFUND
+}
+
+enum RefundType {
+  FULL
+  PARTIAL
+}
+
+enum RefundStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum PenaltyType {
+  NO_SHOW
+  LATE
+  MISCONDUCT
+  QUALITY_COMPLAINT
+  UNPROFESSIONAL
+}
+
+enum PenaltyStatus {
+  ACTIVE
+  DISPUTED
+  RESOLVED
+  REVERSED
+}
+
+enum NotificationType {
+  APPOINTMENT
+  REMINDER
+  REFUND
+  CREDIT_EXPIRY
+  VERIFICATION
+  REVIEW
+  PENALTY
+  SYSTEM
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+
+model User {
+  id                String   @id @default(cuid())
+  clerkUserId       String   @unique
+  email             String   @unique
+  name              String
+  imageUrl          String?
+  role              UserRole @default(UNASSIGNED)
+  phone             String?
+  dateOfBirth       DateTime?
+  gender            String?
+  address           String?
+  city              String?
+  country           String?  @default("Kenya")
+  
+  // Credits (Backend: 2 credits = 1 consultation, but users see consultations)
+  credits           Int      @default(2)  // New users get 2 free credits = 1 free consultation
+  creditBalance     Int      @default(0)  // For doctors: their earnings balance
+  
+  // Doctor-specific fields
+  speciality        String?
+  experience        Int?     @default(0)
+  credentialUrl     String?
+  licenseNumber     String?  @unique
+  bio               String?  @db.Text
+  consultationFee   Int?     @default(2) // Always 2 credits = 1 consultation
+  rating            Float?   @default(0)
+  totalReviews      Int      @default(0)
+  verificationStatus VerificationStatus @default(PENDING)
+  doctorStatus      DoctorStatus @default(ACTIVE) // For admin CRUD operations
+  isAvailable       Boolean  @default(true)
+  
+  // Admin actions tracking
+  suspendedAt       DateTime?
+  suspendedBy       String?  // Admin ID who suspended
+  suspensionReason  String?  @db.Text
+  bannedAt          DateTime?
+  bannedBy          String?  // Admin ID who banned
+  banReason         String?  @db.Text
+  deletedAt         DateTime? // Soft delete
+  deletedBy         String?  // Admin ID who deleted
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  lastActive        DateTime @default(now())
+  
+  // Relations
+  appointmentsAsPatient Appointment[]       @relation("PatientAppointments")
+  appointmentsAsDoctor  Appointment[]       @relation("DoctorAppointments")
+  availabilities        Availability[]
+  creditTransactions    CreditTransaction[]
+  creditPackages        CreditPackage[]
+  reviews               Review[]            @relation("ReviewsByPatient")
+  reviewsReceived       Review[]            @relation("ReviewsForDoctor")
+  refunds               Refund[]
+  penalties             Penalty[]
+  familyMembers         FamilyMember[]      @relation("FamilyOwner")
+  familyMemberOf        FamilyMember[]      @relation("FamilyMemberUser")
+  notifications         Notification[]
+  
+  @@index([email])
+  @@index([clerkUserId])
+  @@index([role])
+  @@index([doctorStatus])
+  @@map("users")
+}
+
+model Appointment {
+  id                  String    @id @default(cuid())
+  patientId           String
+  doctorId            String
+  
+  // Scheduling (No time limit - handled in actions, max 1.5 hours suggested)
+  startTime           DateTime
+  endTime             DateTime?  // Calculated or set when appointment ends
+  actualDuration      Int?       // Actual duration in minutes (calculated when completed)
+  
+  // Status tracking
+  status              AppointmentStatus @default(SCHEDULED)
+  cancelledBy         CancelledBy?
+  cancellationReason  String?   @db.Text
+  cancelledAt         DateTime?
+  
+  // Consultation details (Video only - in-person discussed during call)
+  notes               String?   @db.Text
+  patientDescription  String?   @db.Text
+  diagnosis           String?   @db.Text
+  prescription        String?   @db.Text
+  
+  // Video session (Agora.io)
+  videoSessionId      String?   @unique
+  videoSessionToken   String?   @db.Text
+  channelName         String?
+  agoraUid            Int?      // Agora user ID
+  recordingUrl        String?   // URL to first 10-min recording
+  recordingStartTime  DateTime?
+  recordingEndTime    DateTime?
+  recordingDuration   Int?      // Duration of recording in seconds
+  
+  // Credits & Payment (Dynamic pricing based on package)
+  creditsCharged      Int       @default(2) // Always 2 credits = 1 consultation
+  packagePrice        Int       // The price per consultation from patient's package (500, 450, or 400)
+  platformCommission  Float     @default(0.12) // 12% of packagePrice
+  platformEarnings    Float     // Calculated: packagePrice * 0.12
+  doctorEarnings      Float     // Calculated: packagePrice * 0.88
+  creditsRefunded     Int       @default(0) // 0, 1, or 2
+  
+  // Timestamps
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  confirmedAt         DateTime?
+  startedAt           DateTime?
+  completedAt         DateTime?
+  
+  // Relations
+  patient             User      @relation("PatientAppointments", fields: [patientId], references: [id], onDelete: Cascade)
+  doctor              User      @relation("DoctorAppointments", fields: [doctorId], references: [id], onDelete: Cascade)
+  review              Review?
+  refund              Refund?
+  
+  @@index([patientId])
+  @@index([doctorId])
+  @@index([status])
+  @@index([startTime])
+  @@map("appointments")
+}
+
+model Availability {
+  id        String   @id @default(cuid())
+  doctorId  String
+  
+  // Time slots
+  dayOfWeek Int      // 0 = Sunday, 1 = Monday, etc.
+  startTime String   // "09:00"
+  endTime   String   // "17:00"
+  
+  // Specific date override (optional)
+  specificDate DateTime?
+  
+  // Status
+  isAvailable Boolean  @default(true)
+  
+  // Relations
+  doctor User @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  
+  @@index([doctorId])
+  @@index([dayOfWeek])
+  @@map("availabilities")
+}
+
+model CreditPackage {
+  id                String   @id @default(cuid())
+  userId            String
+  
+  // Package details
+  packageType       PackageType
+  consultations     Int      // 5, 15, or 30
+  totalCredits      Int      // consultations * 2
+  creditsUsed       Int      @default(0)
+  creditsRemaining  Int      // totalCredits - creditsUsed
+  
+  // Pricing (Dynamic - commission calculated from this)
+  priceKsh          Int      // 2500, 6750, 12000
+  pricePerConsultation Int   // 500, 450, 400 (THIS is used for commission calculation)
+  
+  // Validity
+  purchasedAt       DateTime @default(now())
+  validUntil        DateTime // purchasedAt + 365 days
+  expiresAt         DateTime // Same as validUntil
+  status            PackageStatus @default(ACTIVE)
+  
+  // Sharing (for Family/Wellness packages)
+  isShareable       Boolean  @default(false)
+  sharedWith        String[] // Array of user IDs
+  
+  // Relations
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions      CreditTransaction[]
+  
+  @@index([userId])
+  @@index([status])
+  @@index([validUntil])
+  @@map("credit_packages")
+}
+
+model CreditTransaction {
+  id              String   @id @default(cuid())
+  userId          String
+  packageId       String?
+  
+  // Transaction details
+  amount          Int      // Positive for credit, negative for debit
+  type            TransactionType
+  description     String?  @db.Text
+  
+  // Related entities
+  appointmentId   String?  // If spent on appointment
+  refundId        String?  // If this is a refund
+  
+  // Metadata
+  balanceBefore   Int
+  balanceAfter    Int
+  createdAt       DateTime @default(now())
+  
+  // Relations
+  user            User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  package         CreditPackage?  @relation(fields: [packageId], references: [id])
+  
+  @@index([userId])
+  @@index([type])
+  @@index([createdAt])
+  @@map("credit_transactions")
+}
+
+model Refund {
+  id              String   @id @default(cuid())
+  appointmentId   String   @unique
+  userId          String
+  
+  // Refund details
+  reason          RefundReason
+  refundType      RefundType
+  
+  // Credits breakdown
+  originalCredits Int      @default(2)
+  refundedCredits Int      // 0, 1, or 2
+  refundPercentage Float   // 0, 50, or 100
+  
+  // Financial split (for late cancellations - 50/25/25)
+  patientRefundAmount Float    // 50% = 1 credit worth
+  doctorCompensation  Float    // 25% = 0.5 credit worth
+  platformFee         Float    // 25% = 0.5 credit worth
+  
+  // Status
+  status          RefundStatus @default(PENDING)
+  processedAt     DateTime?
+  processedBy     String?  // Admin ID
+  
+  // Notes
+  requestNotes    String?  @db.Text
+  adminNotes      String?  @db.Text
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointment     Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([status])
+  @@map("refunds")
+}
+
+model Penalty {
+  id              String   @id @default(cuid())
+  doctorId        String
+  appointmentId   String?
+  
+  // Penalty details
+  type            PenaltyType
+  creditsDeducted Int      // Usually 1 credit
+  amountDeducted  Float    // Monetary value deducted from doctor earnings
+  reason          String   @db.Text
+  
+  // Status
+  status          PenaltyStatus @default(ACTIVE)
+  appealNotes     String?  @db.Text
+  
+  // Admin tracking
+  issuedBy        String?  // Admin ID who issued penalty
+  resolvedBy      String?  // Admin ID who resolved
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  resolvedAt      DateTime?
+  
+  // Relations
+  doctor          User     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  
+  @@index([doctorId])
+  @@index([status])
+  @@map("penalties")
+}
+
+model Review {
+  id              String   @id @default(cuid())
+  appointmentId   String   @unique
+  patientId       String
+  doctorId        String
+  
+  // Rating
+  rating          Int      // 1-5 stars
+  comment         String?  @db.Text
+  
+  // Categories (optional detailed ratings)
+  communicationRating Int?
+  professionalismRating Int?
+  punctualityRating Int?
+  
+  // Status
+  isVerified      Boolean  @default(true) // Only patients with completed appointments can review
+  isPublic        Boolean  @default(true)
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  patient         User     @relation("ReviewsByPatient", fields: [patientId], references: [id], onDelete: Cascade)
+  doctor          User     @relation("ReviewsForDoctor", fields: [doctorId], references: [id], onDelete: Cascade)
+  appointment     Appointment @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  
+  @@index([doctorId])
+  @@index([rating])
+  @@map("reviews")
+}
+
+model FamilyMember {
+  id              String   @id @default(cuid())
+  ownerId         String   // The user who owns the family package
+  memberId        String   // The family member who can use credits
+  
+  // Relationship
+  relationship    String?  // "spouse" | "child" | "parent" | "sibling" | "other"
+  nickname        String?
+  
+  // Status
+  isActive        Boolean  @default(true)
+  
+  // Timestamps
+  addedAt         DateTime @default(now())
+  removedAt       DateTime?
+  
+  // Relations
+  owner           User     @relation("FamilyOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  member          User     @relation("FamilyMemberUser", fields: [memberId], references: [id], onDelete: Cascade)
+  
+  @@unique([ownerId, memberId])
+  @@index([ownerId])
+  @@index([memberId])
+  @@map("family_members")
+}
+
+model Notification {
+  id              String   @id @default(cuid())
+  userId          String
+  
+  // Notification details
+  type            NotificationType
+  title           String
+  message         String   @db.Text
+  
+  // Status
+  isRead          Boolean  @default(false)
+  readAt          DateTime?
+  
+  // Metadata
+  relatedId       String?  // ID of related entity (appointment, refund, etc.)
+  actionUrl       String?  // Where to navigate when clicked
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  
+  // Relations
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+  @@index([isRead])
+  @@index([createdAt])
+  @@map("notifications")
+}
+
+model FAQ {
+  id              String   @id @default(cuid())
+  question        String   @db.Text
+  answer          String   @db.Text
+  category        String   // "general" | "credits" | "appointments" | "refunds" | "doctors"
+  order           Int      @default(0)
+  isPublished     Boolean  @default(true)
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  @@index([category])
+  @@index([order])
+  @@map("faqs")
+}
+
+model SupportTicket {
+  id              String   @id @default(cuid())
+  userId          String?  // Optional - can be submitted by non-users
+  email           String
+  
+  // Ticket details
+  subject         String
+  question        String   @db.Text
+  category        String?  // "technical" | "billing" | "appointment" | "other"
+  priority        TicketPriority @default(NORMAL)
+  
+  // Status
+  status          TicketStatus @default(OPEN)
+  response        String?  @db.Text
+  respondedBy     String?  // Admin user ID
+  respondedAt     DateTime?
+  
+  // Timestamps
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  closedAt        DateTime?
+  
+  @@index([email])
+  @@index([status])
+  @@map("support_tickets")
+}
+
+model SystemConfig {
+  id              String   @id @default(cuid())
+  key             String   @unique
+  value           String   @db.Text
+  description     String?  @db.Text
+  
+  updatedAt       DateTime @updatedAt
+  
+  @@map("system_config")
+}
+
+// Admin action logs for audit trail
+model AdminLog {
+  id              String   @id @default(cuid())
+  adminId         String
+  action          String   // "suspend_doctor" | "ban_doctor" | "delete_doctor" | "approve_refund" | etc.
+  targetType      String   // "user" | "appointment" | "refund" | "penalty"
+  targetId        String
+  reason          String?  @db.Text
+  metadata        Json?    // Additional data
+  
+  createdAt       DateTime @default(now())
+  
+  @@index([adminId])
+  @@index([targetType])
+  @@index([createdAt])
+  @@map("admin_logs")
+}

@@ -1,9 +1,10 @@
+// components/general/Navbar.jsx
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/general/theme-toggle";
 import { Button } from "../ui/button";
-import { Menu } from "lucide-react";
+import { Menu, User, Calendar, Stethoscope, ShieldCheck } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -14,114 +15,158 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import {
-  SignInButton,
-  SignUpButton,
   SignedIn,
   SignedOut,
+  SignInButton,
   UserButton,
-} from '@clerk/nextjs' 
+} from "@clerk/nextjs";
 
-const Navbar = () => {
+const Navbar = ({ dbUser }) => {
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const handleScroll = () => {
-      if (window.scrollY > 10) {
-        setScrolled(true);
-      } else {
-        setScrolled(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const onScroll = () => setScrolled(window.scrollY > 10);
+    window.addEventListener("scroll", onScroll);
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Get role from database user (not Clerk metadata)
+  const role = dbUser?.role || "UNASSIGNED";
+
+  const getRoleConfig = () => {
+    switch (role) {
+      case "PATIENT":
+        return {
+          href: "/doctors",
+          text: "Find Doctors",
+          icon: <Calendar className="h-4 w-4" />,
+          variant: "secondary"
+        };
+      case "DOCTOR":
+        return {
+          href: "/doctor",
+          text: "Dashboard",
+          icon: <Stethoscope className="h-4 w-4" />,
+          variant: "secondary"
+        };
+      case "ADMIN":
+        return {
+          href: "/admin",
+          text: "Admin",
+          icon: <ShieldCheck className="h-4 w-4" />,
+          variant: "secondary"
+        };
+      default:
+        return {
+          href: "/onboarding",
+          text: "Complete Profile",
+          icon: <User className="h-4 w-4" />,
+          variant: "default" // Gradient to encourage completion
+        };
+    }
+  };
+
+  const roleConfig = getRoleConfig();
+
   return (
-    <div
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+    <header
+      className={`fixed inset-x-0 top-0 z-50 transition-all ${
         scrolled
-          ? "bg-white/70 dark:bg-gray-900/70 backdrop-blur-lg shadow"
+          ? "bg-white/70 dark:bg-gray-900/70 backdrop-blur shadow"
           : "bg-transparent"
       }`}
     >
-      <nav className="container mx-auto padded py-4">
-        <div className="flex items-center justify-between">
-          {/* Logo Section */}
-          <Link href="/" className="flex items-center">
-            <div className="relative size-8 sm:size-8">
-              <Image
-                src="/logo.PNG"
-                alt="TibaPoint Logo"
-                fill
-                className="object-contain rounded-md "
-                priority
-              />
-            </div>
-            <span className="ml-1 text-lg font-semibold ">TibaPoint</span>
-          </Link>
-
-          <div className="hidden md:flex items-center space-x-3">
-            <ThemeToggle />
-            <SignedOut>
-              <SignUpButton>
-                <Button variant='secondary' className="bg-white/50 dark:bg-gray-800/50 backdrop-blur-sm border-white/30 dark:border-gray-700/30">
-                  Sign In
-                </Button>
-              </SignUpButton>
-            </SignedOut>
-            <SignedIn>
-              <UserButton/>
-            </SignedIn>
+      <nav className="container padded mx-auto flex items-center justify-between py-4">
+        {/* Logo */}
+        <Link href="/" className="flex items-center gap-2">
+          <div className="relative h-8 w-8">
+            <Image src="/logo.png" alt="TibaPoint" fill className="object-contain rounded-md" />
           </div>
+          <span className="font-semibold text-lg">TibaPoint</span>
+        </Link>
+ 
+        {/* Desktop */}
+        <div className="hidden md:flex items-center gap-3">
+          <ThemeToggle />
 
-          {/* Mobile Menu */}
-          <div className="flex md:hidden items-center space-x-2">
-            <ThemeToggle />
+          <SignedOut>
+            <Link href="/pricing">
+              <Button variant="secondary">Pricing</Button>
+            </Link>
+            <SignInButton>
+              <Button>Sign In</Button>
+            </SignInButton>
+          </SignedOut>
+
+          <SignedIn>
+            <Link href={roleConfig.href}>
+              <Button 
+                variant={roleConfig.variant}
+                className={`gap-2 ${
+                  roleConfig.variant === 'default' 
+                    ? 'bg-gradient-primary hover:opacity-90' 
+                    : ''
+                }`}
+              >
+                {roleConfig.icon}
+                {roleConfig.text}
+              </Button>
+            </Link>
+            <UserButton />
+          </SignedIn>
+        </div>
+
+        {/* Mobile */}
+        <div className="md:hidden flex items-center gap-2">
+          <ThemeToggle />
+
+          <SignedOut>
+            <SignInButton>
+              <Button size="icon" variant="ghost">
+                <User className="h-5 w-5" />
+              </Button>
+            </SignInButton>
+          </SignedOut>
+
+          <SignedIn>
             <Sheet>
               <SheetTrigger asChild>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="md:hidden bg-white/40 dark:bg-gray-900/40 backdrop-blur-sm"
-                >
-                  <Menu className="h-10 w-10" />
-                  <span className="sr-only">Toggle menu</span>
+                <Button size="icon" variant="ghost">
+                  <Menu className="h-6 w-6" />
                 </Button>
               </SheetTrigger>
-              <SheetContent 
-                side="right" 
-                className="w-75 sm:w-85 px-4 bg-white/95 dark:bg-gray-900/95 backdrop-blur-xl"
-              >
+
+              <SheetContent side="right">
                 <SheetHeader>
-                  <SheetTitle className="flex items-center">
-                    <div className="relative h-8 w-8 mr-2">
-                      <Image
-                        src="/logo.png"
-                        alt="TibaPoint Logo"
-                        fill
-                        className="object-contain"
-                      />
+                  <SheetTitle className="flex items-center gap-2">
+                    <div className="relative h-8 w-8">
+                      <Image src="/logo.png" alt="TibaPoint" fill className="object-contain" />
                     </div>
-                    <span className="">TibaPoint</span>
+                    TibaPoint
                   </SheetTitle>
                 </SheetHeader>
 
-                {/* Mobile Navigation Links */}
-                <div className="flex flex-col space-y-4 mt-8">
-                  <Link
-                    href="/"
-                    className="flex items-center space-x-3 p-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-blue-50/50 dark:hover:bg-gray-800/50 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                  >
-                    <span className="font-medium">Home</span>
+                <div className="mt-6 flex flex-col gap-4">
+                  <Link href="/" className="hover:text-primary transition-colors">
+                    Home
+                  </Link>
+                  <Link href="/pricing" className="hover:text-primary transition-colors">
+                    Pricing
                   </Link>
 
-                  <div className="pt-4">
-                    <Link href="/login">
-                      <Button className="w-full bg-linear-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white">
-                        Get Started
-                      </Button>
-                    </Link>
+                  <Link 
+                    href={roleConfig.href} 
+                    className="flex items-center gap-2 hover:text-primary transition-colors"
+                  >
+                    {roleConfig.icon}
+                    {roleConfig.text}
+                  </Link>
+
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Account</span>
+                      <UserButton />
+                    </div>
                   </div>
                 </div>
 
@@ -132,10 +177,10 @@ const Navbar = () => {
                 </div>
               </SheetContent>
             </Sheet>
-          </div>
+          </SignedIn>
         </div>
       </nav>
-    </div>
+    </header>
   );
 };
 

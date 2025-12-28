@@ -1,37 +1,35 @@
-import { Inter } from "next/font/google";
-import "./globals.css";
-import { ThemeProvider } from "@/components/general/theme-provider";
-import Footer from "@/components/general/Footer";
-import Navbar from "@/components/general/Navbar";
-import {
-  ClerkProvider,
-} from '@clerk/nextjs'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { ThemeProvider } from '@/components/general/theme-provider'
+import { ClerkProvider } from '@clerk/nextjs'
+import { Toaster } from 'sonner'
 
-const inter = Inter({ subsets: ["latin"] });
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: "TibaPoint | Your Healthcare, Simplified ",
+  title: 'TibaPoint | Your Healthcare, Simplified',
   description:
-    "TibaPoint, a leading doctor appointment platform that helps patients book verified healthcare professionals instantly.",
-};
+    'TibaPoint helps patients book verified healthcare professionals instantly.',
+}
 
 export default function RootLayout({ children }) {
   return (
-     <ClerkProvider>
-    <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.className}  `}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          {/* <Navbar /> */}
-          {children}
-          {/* <Footer /> */}
-        </ThemeProvider>
-      </body>
-    </html>
-     </ClerkProvider>
-  );
+    <ClerkProvider>
+      <html lang="en" suppressHydrationWarning>
+        <body className={inter.className}>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            {children}
+          </ThemeProvider>
+          <Toaster />
+        </body>
+      </html>
+    </ClerkProvider>
+  )
 }
+
+
