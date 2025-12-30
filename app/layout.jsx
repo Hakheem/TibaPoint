@@ -11,7 +11,7 @@ export const metadata = {
   description:
     'TibaPoint helps patients book verified healthcare professionals instantly.',
 }
-
+  
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
@@ -25,7 +25,7 @@ export default function RootLayout({ children }) {
           >
             {children}
           </ThemeProvider>
-          <Toaster />
+          <Toaster richColors />
         </body>
       </html>
     </ClerkProvider>

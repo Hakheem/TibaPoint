@@ -4,20 +4,19 @@ import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'  
 import { revalidatePath } from 'next/cache'
 
-// ✅ Package configurations with 30-day expiry
+// Package confi - 30-day expiry
 const PACKAGE_CONFIG = {
   Starter: {
     consultations: 5,
-    credits: 10, // 5 * 2
-    price: 10,
-    // price: 2500,
+    credits: 10, 
+    price: 2500, 
     pricePerConsultation: 500,
     type: 'STARTER',
     expiryDays: 30
   },
   Family: {
     consultations: 8,
-    credits: 16, // 8 * 2
+    credits: 16,
     price: 3800,
     pricePerConsultation: 475,
     type: 'FAMILY',
@@ -25,7 +24,7 @@ const PACKAGE_CONFIG = {
   },
   Wellness: {
     consultations: 10,
-    credits: 20, // 10 * 2
+    credits: 20,
     price: 4500,
     pricePerConsultation: 450,
     type: 'WELLNESS',
@@ -33,37 +32,30 @@ const PACKAGE_CONFIG = {
   }
 }
 
-// ✅ USER'S BROWSER URLs (localhost for development)
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-// ✅ INTASEND SERVER URLs (MUST be public - ngrok URL)
-const getWebhookBaseUrl = () => {
-  if (process.env.WEBHOOK_URL) {
-    // Remove any trailing paths
-    let url = process.env.WEBHOOK_URL.trim()
-    // Remove /api/webhooks/intasend if accidentally included
-    url = url.replace(/\/api\/webhooks\/intasend$/, '')
-    return url
+// get stored payment data
+async function findStoredPaymentData(api_ref) {
+  try {
+    const pendingPayment = await prisma.systemConfig.findUnique({
+      where: { key: `pending_payment_${api_ref}` }
+    })
+    
+    if (pendingPayment) {
+      const data = JSON.parse(pendingPayment.value)
+      console.log('✅ Found stored payment data:', {
+        userId: data.userId,
+        packageName: data.packageName,
+        packageConfig: data.packageConfig
+      })
+      return data
+    }
+    return null
+  } catch (error) {
+    console.error('Error finding stored payment:', error)
+    return null
   }
-  // 2. In production, use the app URL
-  if (process.env.NODE_ENV === 'production') {
-    return process.env.NEXT_PUBLIC_APP_URL || 'https://yourdomain.com'
-  }
-  
-  // 3. Fallback with warning
-  console.warn('⚠️ WEBHOOK_URL not set in .env! IntaSend cannot reach localhost')
-  return 'http://localhost:3000'
 }
-
-const WEBHOOK_BASE_URL = getWebhookBaseUrl()
-
-// Log configuration at server start
-console.log('🌐 URL Configuration:', {
-  userRedirects: BASE_URL,
-  serverWebhooks: WEBHOOK_BASE_URL,
-  isPublicUrl: !WEBHOOK_BASE_URL.includes('localhost'),
-  webhookEndpoint: `${WEBHOOK_BASE_URL}/api/webhooks/intasend`
-})
 
 /**
  * Creates a checkout session with IntaSend SDK
@@ -78,7 +70,6 @@ export async function createCheckoutSession(packageName) {
 
     console.log('🔄 Starting checkout for user:', userId, 'package:', packageName)
 
-    // Get user from database
     const user = await prisma.user.findUnique({
       where: { clerkUserId: userId }
     })
@@ -92,47 +83,36 @@ export async function createCheckoutSession(packageName) {
       return { success: false, error: 'Invalid package' }
     }
 
-    // Dynamically import IntaSend SDK
     const IntaSend = (await import('intasend-node')).default
     
-    console.log('🔑 Environment check:', {
-      publishableKey: !!process.env.INTASEND_PUBLISHABLE_KEY,
-      secretKey: !!process.env.INSTASEND_SECRET_KEY,
-      webhookBaseUrl: WEBHOOK_BASE_URL
-    })
-
     const intasend = new IntaSend(
       process.env.INTASEND_PUBLISHABLE_KEY,
       process.env.INSTASEND_SECRET_KEY,
-      true  // true = test environment
+      true
     )
 
     const collection = intasend.collection()
     const apiRef = `PKG-${user.id}-${Date.now()}`
 
-    // ✅ SEPARATE URLs for user vs IntaSend server
-    const redirectUrl = `${BASE_URL}/payment/success?ref=${apiRef}`
-    const callbackUrl = `${WEBHOOK_BASE_URL}/api/webhooks/intasend`
-
     console.log('💳 Creating IntaSend charge:', {
       user: user.email,
       amount: packageConfig.price,
-      apiRef,
-      userRedirect: redirectUrl,
-      serverCallback: callbackUrl
+      apiRef
     })
 
+    const webhookUrl = `${BASE_URL}/api/webhooks/intasend`
+
     const resp = await collection.charge({
-      first_name: user.name?.split(' ')[0] || 'Customer',
+      first_name: user.name?.split(' ')[0] || 'Patient',
       last_name: user.name?.split(' ').slice(1).join(' ') || '',
       email: user.email,
-      phone_number: user.phone || '254712345678', // REQUIRED for M-Pesa
+      phone_number: user.phone || '254700000000',
       host: BASE_URL,
       amount: packageConfig.price,
       currency: 'KES',
       api_ref: apiRef,
-      redirect_url: redirectUrl, // User's browser goes here after payment
-      callback_url: callbackUrl, // ✅ IntaSend server calls this (PUBLIC URL)
+      redirect_url: `${BASE_URL}/payment/success?ref=${apiRef}`,
+      callback_url: webhookUrl,
       metadata: JSON.stringify({
         userId: user.id,
         packageName: packageName,
@@ -145,25 +125,29 @@ export async function createCheckoutSession(packageName) {
 
     console.log('✅ IntaSend response:', {
       url: resp.url ? 'Checkout URL generated' : 'No URL',
-      invoice_id: resp.invoice_id || 'No invoice ID',
-      callbackUrl: callbackUrl
+      invoice_id: resp.invoice_id || 'No invoice ID'
     })
     
     if (!resp.url) {
       throw new Error('No checkout URL received from IntaSend')
     }
 
-    // Store pending payment for webhook reference
+    // Store pending payment 
     await prisma.systemConfig.upsert({
       where: { key: `pending_payment_${apiRef}` },
       update: {
         value: JSON.stringify({
           userId: user.id,
           packageName,
-          packageConfig,
-          intasendInvoiceId: resp.invoice_id,
+          packageConfig: {
+            consultations: packageConfig.consultations,
+            credits: packageConfig.credits,
+            price: packageConfig.price,
+            pricePerConsultation: packageConfig.pricePerConsultation,
+            type: packageConfig.type,
+            expiryDays: 30
+          },
           apiRef,
-          callbackUrl: callbackUrl,
           createdAt: new Date().toISOString()
         })
       },
@@ -172,10 +156,15 @@ export async function createCheckoutSession(packageName) {
         value: JSON.stringify({
           userId: user.id,
           packageName,
-          packageConfig,
-          intasendInvoiceId: resp.invoice_id,
+          packageConfig: {
+            consultations: packageConfig.consultations,
+            credits: packageConfig.credits,
+            price: packageConfig.price,
+            pricePerConsultation: packageConfig.pricePerConsultation,
+            type: packageConfig.type,
+            expiryDays: 30
+          },
           apiRef,
-          callbackUrl: callbackUrl,
           createdAt: new Date().toISOString()
         }),
         description: 'Pending IntaSend payment'
@@ -189,16 +178,8 @@ export async function createCheckoutSession(packageName) {
     }
 
   } catch (error) {
-    console.error('❌ IntaSend checkout error:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
-    })
-    
-    return { 
-      success: false, 
-      error: error.message || 'Failed to create checkout' 
-    }
+    console.error('❌ IntaSend checkout error:', error.message)
+    return { success: false, error: error.message }
   }
 }
 
@@ -209,19 +190,37 @@ export async function processSuccessfulPayment(paymentData) {
   try {
     const { invoice_id, api_ref, metadata } = paymentData
     
-    if (!metadata) {
-      throw new Error('No metadata in payment data')
+    console.log('💰 Processing payment for api_ref:', api_ref)
+    
+    let userId, packageName, packageConfigData
+    
+    // get data from metadata first
+    if (metadata) {
+      try {
+        const parsed = JSON.parse(metadata)
+        userId = parsed.userId
+        packageName = parsed.packageName
+        console.log('✅ Got data from metadata:', { userId, packageName })
+      } catch (e) {
+        console.log('⚠️ Could not parse metadata:', e.message)
+      }
     }
-
-    const parsedMetadata = JSON.parse(metadata)
-    const { userId, packageName, packageType, credits, consultations } = parsedMetadata
-
+    
+    // If no metadata, find stored data
     if (!userId || !packageName) {
-      throw new Error('Missing required payment data')
+      console.log('🔍 Looking for stored payment data...')
+      const storedData = await findStoredPaymentData(api_ref)
+      
+      if (storedData) {
+        userId = storedData.userId
+        packageName = storedData.packageName
+        packageConfigData = storedData.packageConfig
+        console.log('✅ Got data from stored payment:', { userId, packageName })
+      } else {
+        throw new Error(`No payment data found for api_ref: ${api_ref}`)
+      }
     }
-
-    console.log('💰 Processing payment for:', { userId, packageName, api_ref })
-
+    
     // Get user
     const user = await prisma.user.findUnique({
       where: { id: userId }
@@ -231,24 +230,33 @@ export async function processSuccessfulPayment(paymentData) {
       throw new Error('User not found')
     }
 
-    const packageConfig = PACKAGE_CONFIG[packageName]
+    // Get package config
+    const packageConfig = packageConfigData || PACKAGE_CONFIG[packageName]
+    
+    if (!packageConfig) {
+      throw new Error(`Package config not found for: ${packageName}`)
+    }
+
+    console.log('📦 Package config:', packageConfig)
     
     // Calculate expiry date (30 days from now)
     const purchaseDate = new Date()
     const expiryDate = new Date()
     expiryDate.setDate(expiryDate.getDate() + 30)
 
+    console.log('💾 Starting database transaction...')
+    
     // Start database transaction
     await prisma.$transaction(async (tx) => {
-      // Create credit package with 30-day expiry
+      // Create credit package 
       const newPackage = await tx.creditPackage.create({
         data: {
           userId: user.id,
-          packageType: packageType || packageConfig.type,
-          consultations: consultations || packageConfig.consultations,
-          totalCredits: credits || packageConfig.credits,
+          packageType: packageConfig.type,
+          consultations: packageConfig.consultations,
+          totalCredits: packageConfig.credits,
           creditsUsed: 0,
-          creditsRemaining: credits || packageConfig.credits,
+          creditsRemaining: packageConfig.credits,
           priceKsh: packageConfig.price,
           pricePerConsultation: packageConfig.pricePerConsultation,
           purchasedAt: purchaseDate,
@@ -259,12 +267,20 @@ export async function processSuccessfulPayment(paymentData) {
         }
       })
 
+      console.log('✅ Created credit package:', newPackage.id)
+
       // Update user credits
-      await tx.user.update({
+      const updatedUser = await tx.user.update({
         where: { id: user.id },
         data: {
-          credits: user.credits + (credits || packageConfig.credits)
+          credits: user.credits + packageConfig.credits
         }
+      })
+
+      console.log('✅ Updated user credits:', {
+        before: user.credits,
+        after: updatedUser.credits,
+        added: packageConfig.credits
       })
 
       // Create transaction record
@@ -272,26 +288,30 @@ export async function processSuccessfulPayment(paymentData) {
         data: {
           userId: user.id,
           packageId: newPackage.id,
-          amount: credits || packageConfig.credits,
+          amount: packageConfig.credits,
           type: 'PURCHASE',
-          description: `Purchased ${packageName} package (${consultations || packageConfig.consultations} consultations) - Valid for 30 days`,
+          description: `Purchased ${packageName} package (${packageConfig.consultations} consultations) - Valid for 30 days`,
           balanceBefore: user.credits,
-          balanceAfter: user.credits + (credits || packageConfig.credits)
+          balanceAfter: user.credits + packageConfig.credits
         }
       })
+
+      console.log('✅ Created transaction record')
 
       // Create success notification
       await tx.notification.create({
         data: {
           userId: user.id,
           type: 'SYSTEM',
-          title: 'Payment Successful! 🎉',
-          message: `Your ${packageName} package has been activated! You now have ${consultations || packageConfig.consultations} consultations valid for 30 days.`,
+          title: 'Payment Successful 🎉',
+          message: `Your ${packageName} package has been activated! You now have ${packageConfig.consultations} consultations valid for 30 days.`,
           isRead: false,
           relatedId: newPackage.id,
           actionUrl: '/dashboard'
         }
       })
+
+      console.log('✅ Created notification')
     })
 
     // Clean up pending payment record
@@ -301,16 +321,20 @@ export async function processSuccessfulPayment(paymentData) {
       }
     })
 
+    console.log('✅ Cleaned up pending payment')
+
+    revalidatePath('/', 'layout')
     revalidatePath('/pricing')
     revalidatePath('/dashboard')
     revalidatePath('/credits')
+    revalidatePath('/admin')
     
     console.log('✅ Payment processed successfully for:', api_ref)
     return { success: true }
 
   } catch (error) {
     console.error('❌ Payment processing error:', error)
-    return { success: false, error: 'Failed to process payment' }
+    return { success: false, error: error.message }
   }
 }
 
@@ -378,107 +402,6 @@ export async function getUserPackageStatus() {
   } catch (error) {
     console.error('❌ Get package status error:', error)
     return { success: false, error: 'Internal server error' }
-  }
-}
-
-/**
- * Cancels a pending payment
- */
-export async function cancelPendingPayment(apiRef) {
-  try {
-    await prisma.systemConfig.deleteMany({
-      where: {
-        key: `pending_payment_${apiRef}`
-      }
-    })
-    
-    return { success: true }
-  } catch (error) {
-    console.error('❌ Cancel payment error:', error)
-    return { success: false, error: error.message }
-  }
-}
-
-/**
- * Test function to verify IntaSend connection
- */
-export async function testIntaSendConnection() {
-  try {
-    const IntaSend = (await import('intasend-node')).default
-    
-    const intasend = new IntaSend(
-      process.env.INTASEND_PUBLISHABLE_KEY,
-      process.env.INSTASEND_SECRET_KEY,
-      true
-    )
-
-    const collection = intasend.collection()
-    const apiRef = `TEST-${Date.now()}`
-    const callbackUrl = `${WEBHOOK_BASE_URL}/api/webhooks/intasend`
-
-    console.log('🧪 Testing with callback URL:', callbackUrl)
-
-    const resp = await collection.charge({
-      first_name: 'Test',
-      last_name: 'User',
-      email: 'test@example.com',
-      phone_number: '254712345678',
-      host: BASE_URL,
-      amount: 10, // Small test amount
-      currency: 'KES',
-      api_ref: apiRef,
-      redirect_url: `${BASE_URL}/test-success`,
-      callback_url: callbackUrl,
-      metadata: JSON.stringify({
-        test: true,
-        userId: 'test-user',
-        packageName: 'Test',
-        credits: 2,
-        consultations: 1,
-        expiryDays: 30
-      })
-    })
-
-    return {
-      success: true,
-      url: resp.url,
-      message: 'IntaSend connection working',
-      callbackUrl: callbackUrl
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message,
-      callbackUrl: `${WEBHOOK_BASE_URL}/api/webhooks/intasend`
-    }
-  }
-}
-
-/**
- * Test webhook endpoint directly
- */
-export async function testWebhookEndpoint() {
-  const testUrl = `${WEBHOOK_BASE_URL}/api/webhooks/intasend`
-  
-  try {
-    const response = await fetch(testUrl, {
-      method: 'GET'
-    })
-    
-    const data = await response.json()
-    
-    return {
-      success: response.ok,
-      status: response.status,
-      url: testUrl,
-      data: data
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error.message,
-      url: testUrl
-    }
   }
 }
 

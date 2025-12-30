@@ -1,19 +1,18 @@
-"use client";
-
+import { checkUser } from '@/lib/checkUser'
 import Footer from "@/components/general/Footer";
 import Navbar from "@/components/general/Navbar";
 
-export default function MainLayout({ children }) {
-
+export default async function MainLayout({ children }) {
+  // Get user data on server
+  const dbUser = await checkUser()
+  
   return (
- <div> 
-<Navbar />
-     
-      <main className="text-[#100C08] dark:text-[#f0f8ff] ">
-          {children}
+    <div>
+      <Navbar dbUser={dbUser} />
+      <main className="text-[#0C0C0C] dark:text-[#f0f8ff] min-h-screen">
+        {children}
       </main>
       <Footer/>
     </div>
-  );
+  )
 }
-

@@ -42,7 +42,7 @@ export default function PatientOnboardingPage() {
 
         <CardContent className="space-y-6">
           <div className="bg-muted p-4 rounded-lg space-y-2">
-            <p className="text-sm font-medium">What's included:</p>
+            <p className="text-sm font-medium">What's included:</p> 
             <ul className="space-y-1 text-sm text-muted-foreground">
               <li>• 1 FREE consultation (2 credits)</li>
               <li>• Access to 500+ verified doctors</li>

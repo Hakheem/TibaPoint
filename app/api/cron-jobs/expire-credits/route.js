@@ -6,7 +6,7 @@ const CRON_SECRET = process.env.CRON_SECRET || 'your-secret-key'
 
 // Prisma enum values (JS-safe)
 const PackageStatus = {
-  ACTIVE: 'ACTIVE',
+  ACTIVE: 'ACTIVE', 
   EXPIRED: 'EXPIRED'
 }
 

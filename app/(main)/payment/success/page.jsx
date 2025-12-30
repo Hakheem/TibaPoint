@@ -1,5 +1,3 @@
-// app/payment/success/page.jsx - PURE JS VERSION
-
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -14,7 +12,7 @@ export default function PaymentSuccessPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [loading, setLoading] = useState(true)
-  const [packageData, setPackageData] = useState(null) // ✅ REMOVED "any"
+  const [packageData, setPackageData] = useState(null) 
   const [error, setError] = useState('')
 
   useEffect(() => {
@@ -76,8 +74,8 @@ export default function PaymentSuccessPage() {
   const consultationsAvailable = packageData?.consultationsAvailable || 0
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white dark:from-slate-900 dark:to-slate-800 p-4">
-      <Card className="w-full max-w-2xl">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-100 via-blue-50 to-transparent dark:from-primary/20 via-primary/10 to-transparent p-4 py-20 md:pt-0 lg:py-24 ">
+      <Card className="w-full bg-gray-50 dark:bg-gray-900 max-w-3xl">
         <CardHeader className="text-center pb-4">
           <div className="flex justify-center mb-4">
             <div className="h-16 w-16 rounded-full bg-green-100 dark:bg-green-900/20 flex items-center justify-center">
@@ -85,7 +83,7 @@ export default function PaymentSuccessPage() {
             </div>
           </div>
           <CardTitle className="text-2xl md:text-3xl font-bold">
-            Payment Successful!
+            Payment Successful
           </CardTitle>
           <p className="text-muted-foreground mt-2">
             Your package has been activated and is ready to use

@@ -1,4 +1,3 @@
-// actions/credits.js
 'use server'
 
 import { auth } from '@clerk/nextjs/server'
@@ -6,11 +5,11 @@ import { format } from 'date-fns'
 import { db } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 
-// CREDIT ALLOCATION PER PLAN - 2 credits per consultation
+
 const CREDIT_PLAN = {
-    Starter: 10,    // 5 consultations * 2
-    Family: 16,     // 8 consultations * 2
-    Wellness: 20    // 10 consultations * 2 
+    Starter: 10,    
+    Family: 16,   
+    Wellness: 20   
 }
 
 export async function checkAndAllocateCredits(user) {
@@ -148,7 +147,7 @@ export async function checkAndAllocateCredits(user) {
                 data: {
                     userId: user.id,
                     type: 'SYSTEM',
-                    title: `Credits Added!`,
+                    title: `Credits Added`,
                     message: `Your ${currentPlan.toLowerCase()} package has been activated. ${config.consultations} consultations added to your account.`,
                     relatedId: creditPackage.id
                 }
@@ -157,7 +156,6 @@ export async function checkAndAllocateCredits(user) {
             return updatedUser
         })
 
-        // Revalidate paths
         revalidatePath('/dashboard')
         revalidatePath('/appointments')
         revalidatePath('/credits')

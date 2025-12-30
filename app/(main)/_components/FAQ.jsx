@@ -152,7 +152,7 @@ export default function FAQSection() {
         </div>
 
         {/* Still have questions CTA */}
-        <div className="relative text-center mt-12 md:mt-16 p-8 rounded-2xl bg-linear-to-br from-primary/5 via-teal/5 to-transparent dark:from-primary/10 dark:via-teal/10 border border-primary/10 dark:border-teal-500/20 max-w-2xl mx-auto">
+        <div className="relative text-center mt-12 md:mt-16 p-8 rounded-2xl bg-linear-to-b from-blue-100 via-blue-50 to-transparent dark:from-primary/30 dark:via-primary/10 dark:to-transparent border border-primary/10 dark:border-teal-500/20 max-w-2xl mx-auto">
           <h3 className="text-xl md:text-2xl font-bold text-foreground mb-2">
             Still have questions?
           </h3>

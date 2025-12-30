@@ -18,7 +18,7 @@ export default function Features() {
       icon: <Search className="h-6 w-6" />,
       iconColor: "text-blue-600 dark:text-blue-400",
       iconBg: "bg-blue-50 dark:bg-blue-950/30",
-      image: "/feature-search.png", // Replace with your actual image
+      image: "/searchdoc.png", 
       imageAlt: "Doctor search interface with filters",
       reversed: false
     },
@@ -35,7 +35,7 @@ export default function Features() {
       icon: <Wallet className="h-6 w-6" />,
       iconColor: "text-teal-600 dark:text-teal-400",
       iconBg: "bg-teal-50 dark:bg-teal-950/30",
-      image: "/feature-tokens.png", // Replace with your actual image
+      image: "/paying.png", 
       imageAlt: "Token wallet dashboard",
       reversed: true
     },
@@ -52,7 +52,7 @@ export default function Features() {
       icon: <Video className="h-6 w-6" />,
       iconColor: "text-purple-600 dark:text-purple-400",
       iconBg: "bg-purple-50 dark:bg-purple-950/30",
-      image: "/feature-video.png", // Replace with your actual image
+      image: "/consultation.png", 
       imageAlt: "Video consultation interface",
       reversed: false
     },
@@ -69,7 +69,7 @@ export default function Features() {
       icon: <FileText className="h-6 w-6" />,
       iconColor: "text-emerald-600 dark:text-emerald-400",
       iconBg: "bg-emerald-50 dark:bg-emerald-950/30",
-      image: "/feature-records.png", // Replace with your actual image
+      image: "/medical-records.png", 
       imageAlt: "Medical records dashboard",
       reversed: true
     }
@@ -87,14 +87,14 @@ export default function Features() {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-16">
           <div className="inline-block mb-4">
-            <span className="text-xs md:text-sm font-semibold tracking-wider uppercase text-primary dark:text-teal-400 bg-primary/10 dark:bg-teal-500/20 px-4 py-2 rounded-full">
+            <span className="text-xs md:text-sm font-semibold uppercase text-primary dark:text-teal-400 bg-primary/10 dark:bg-teal-500/20 px-4 py-2 rounded-full">
               Features
             </span>
           </div>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-foreground mb-4">
+          {/* <h2 className="text-3xl md:text-4xl  leading-15 font-bold text-foreground mb-4">
             Everything You Need for{' '}
-            <span className="text-linear-primary">Quality Healthcare</span>
-          </h2>
+            <span className="text-gradient-primary">Quality Healthcare</span>
+          </h2> */}
         </div>
 
         {/* Features List */}
@@ -145,7 +145,7 @@ export default function Features() {
 
               {/* Image */}
               <div className={`relative ${feature.reversed ? 'lg:order-1' : 'lg:order-2'}`}>
-                <div className="relative aspect-4/3 rounded-2xl overflow-hidden bg-muted shadow-2xl border border-border">
+                <div className="relative aspect-4/3 rounded-2xl overflow-hidden bg-muted shadow-lg border border-border">
                   {/* Placeholder linear if no image */}
                   <div className="absolute inset-0 bg-linear-to-br from-primary/20 via-teal/10 to-transparent" />
                   
@@ -158,7 +158,6 @@ export default function Features() {
                     </div>
                   </div>
                   
-                  {/* Uncomment when you have images:
                   <Image
                     src={feature.image}
                     alt={feature.imageAlt}
@@ -166,7 +165,7 @@ export default function Features() {
                     className="object-cover"
                     sizes="(max-width: 768px) 100vw, 50vw"
                   />
-                  */}
+                 
                 </div>
 
                 {/* Decorative glow */}

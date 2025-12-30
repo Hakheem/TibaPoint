@@ -4,7 +4,7 @@ import { auth } from '@clerk/nextjs/server'
 import { db } from '@/lib/db'
 import { revalidatePath } from 'next/cache'
 
-// Set user role (Patient or Doctor)
+// Set user role 
 export async function setUserRole(formData) {
   const { userId } = await auth()
 
@@ -33,16 +33,15 @@ export async function setUserRole(formData) {
         where: { clerkUserId: userId },
         data: { 
           role: "PATIENT",
-          verificationStatus: "VERIFIED" // Patients are auto-verified
+          verificationStatus: "VERIFIED" 
         }
       })
 
-      // Create notification
       await db.notification.create({
         data: {
           userId: user.id,
           type: 'SYSTEM',
-          title: 'Welcome to TibaPoint!',
+          title: 'Welcome to TibaPoint.',
           message: 'Your account is ready. Start browsing verified doctors and book your first consultation.',
           actionUrl: '/doctors',
         },
@@ -66,8 +65,8 @@ export async function setUserRole(formData) {
         throw new Error("All required fields must be filled")
       }
 
-      if (experience < 0 || experience > 50) {
-        throw new Error("Experience must be between 0 and 50 years")
+      if (experience < 1 || experience > 50) {
+        throw new Error("Experience must be between 1 and 50 years")
       }
 
       // Check if license number already exists
@@ -95,10 +94,10 @@ export async function setUserRole(formData) {
           bio,
           phone,
           city,
-          verificationStatus: "PENDING", // Doctors need admin verification
+          verificationStatus: "PENDING", 
           doctorStatus: "ACTIVE",
-          consultationFee: 2, // Default 2 credits per consultation
-          isAvailable: false, // Not available until verified
+          consultationFee: 2, 
+          isAvailable: false, 
         }
       })
 
@@ -114,7 +113,7 @@ export async function setUserRole(formData) {
       })
 
       revalidatePath("/")
-      return { success: true, redirect: "/doctor/verification-pending" }
+      return { success: true, redirect: "/doctor/verification" }
     }
 
     throw new Error("Invalid role")

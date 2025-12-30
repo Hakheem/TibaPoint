@@ -126,6 +126,11 @@
   }
 }
 
+html, body {
+  scroll-behavior: smooth;
+}
+
+
 .padded {
   padding-left: 1rem;
   padding-right: 1rem;

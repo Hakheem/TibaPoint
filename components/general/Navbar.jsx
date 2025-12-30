@@ -1,10 +1,10 @@
-// components/general/Navbar.jsx
+// components/general/Navbar.jsx - SIMPLIFIED & WORKING
 "use client";
 
 import React, { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/general/theme-toggle";
 import { Button } from "../ui/button";
-import { Menu, User, Calendar, Stethoscope, ShieldCheck } from "lucide-react";
+import { Menu, User, Calendar, Stethoscope, ShieldCheck, CreditCard } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -23,15 +23,17 @@ import {
 
 const Navbar = ({ dbUser }) => {
   const [scrolled, setScrolled] = useState(false);
+  
+  // Safely extract user data
+  const role = dbUser?.role || "UNASSIGNED";
+  const credits = dbUser?.credits || 0;
+  const consultations = Math.floor(credits / 2);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
-  // Get role from database user (not Clerk metadata)
-  const role = dbUser?.role || "UNASSIGNED";
 
   const getRoleConfig = () => {
     switch (role) {
@@ -61,7 +63,7 @@ const Navbar = ({ dbUser }) => {
           href: "/onboarding",
           text: "Complete Profile",
           icon: <User className="h-4 w-4" />,
-          variant: "default" // Gradient to encourage completion
+          variant: "default"
         };
     }
   };
@@ -80,12 +82,18 @@ const Navbar = ({ dbUser }) => {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <div className="relative h-8 w-8">
-            <Image src="/logo.png" alt="TibaPoint" fill className="object-contain rounded-md" />
+            <Image 
+              src="/logo.png" 
+              alt="TibaPoint" 
+              fill 
+              className="object-contain rounded-md" 
+              sizes="32px"
+            />
           </div>
           <span className="font-semibold text-lg">TibaPoint</span>
         </Link>
  
-        {/* Desktop */}
+        {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
 
@@ -99,12 +107,26 @@ const Navbar = ({ dbUser }) => {
           </SignedOut>
 
           <SignedIn>
+            {/* Show credits for PATIENTS only */}
+            {role === "PATIENT" && (
+              <Link href="/credits">
+                <Button variant="outline" className="gap-2 border-primary/20">
+                  <CreditCard className="h-4 w-4" />
+                  <span className="font-semibold">{consultations}</span>
+                  <span className="text-xs text-muted-foreground">
+                    consultation{consultations !== 1 ? 's' : ''}
+                  </span>
+                </Button>
+              </Link>
+            )}
+
+            {/* Role-specific button */}
             <Link href={roleConfig.href}>
               <Button 
                 variant={roleConfig.variant}
                 className={`gap-2 ${
                   roleConfig.variant === 'default' 
-                    ? 'bg-gradient-primary hover:opacity-90' 
+                    ? 'bg-gradient-primary' 
                     : ''
                 }`}
               >
@@ -112,11 +134,12 @@ const Navbar = ({ dbUser }) => {
                 {roleConfig.text}
               </Button>
             </Link>
+            
             <UserButton />
           </SignedIn>
         </div>
 
-        {/* Mobile */}
+        {/* Mobile Navigation */}
         <div className="md:hidden flex items-center gap-2">
           <ThemeToggle />
 
@@ -129,6 +152,16 @@ const Navbar = ({ dbUser }) => {
           </SignedOut>
 
           <SignedIn>
+            {/* Mobile credits display */}
+            {role === "PATIENT" && (
+              <Link href="/credits" className="mr-2">
+                <Button variant="ghost" size="sm" className="gap-1 px-2">
+                  <CreditCard className="h-3.5 w-3.5" />
+                  <span className="font-medium">{consultations}</span>
+                </Button>
+              </Link>
+            )}
+
             <Sheet>
               <SheetTrigger asChild>
                 <Button size="icon" variant="ghost">
@@ -140,48 +173,57 @@ const Navbar = ({ dbUser }) => {
                 <SheetHeader>
                   <SheetTitle className="flex items-center gap-2">
                     <div className="relative h-8 w-8">
-                      <Image src="/logo.png" alt="TibaPoint" fill className="object-contain" />
+                      <Image 
+                        src="/logo.png" 
+                        alt="TibaPoint" 
+                        fill 
+                        className="object-contain" 
+                        sizes="32px"
+                      />
                     </div>
                     TibaPoint
                   </SheetTitle>
                 </SheetHeader>
 
                 <div className="mt-6 flex flex-col gap-4">
-                  <Link href="/" className="hover:text-primary transition-colors">
+                  <Link href="/" className="hover:text-primary transition-colors py-2">
                     Home
                   </Link>
-                  <Link href="/pricing" className="hover:text-primary transition-colors">
+                  <Link href="/pricing" className="hover:text-primary transition-colors py-2">
                     Pricing
                   </Link>
 
+                  {/* Mobile credits link */}
+                  {role === "PATIENT" && (
+                    <Link href="/credits" className="flex items-center gap-2 hover:text-primary transition-colors py-2">
+                      <CreditCard className="h-4 w-4" />
+                      <span>{consultations} consultations available</span>
+                    </Link>
+                  )}
+
                   <Link 
                     href={roleConfig.href} 
-                    className="flex items-center gap-2 hover:text-primary transition-colors"
+                    className="flex items-center gap-2 hover:text-primary transition-colors py-2"
                   >
                     {roleConfig.icon}
                     {roleConfig.text}
                   </Link>
 
-                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center justify-between">
+                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
+                    <div className="flex items-center justify-between py-2">
                       <span className="text-sm text-muted-foreground">Account</span>
                       <UserButton />
                     </div>
                   </div>
-                </div>
-
-                <div className="absolute bottom-6 left-6 right-6">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 text-center">
-                    © {new Date().getFullYear()} TibaPoint. All rights reserved.
-                  </p>
                 </div>
               </SheetContent>
             </Sheet>
           </SignedIn>
         </div>
       </nav>
-    </header>
+    </header> 
   );
 };
 
 export default Navbar;
+

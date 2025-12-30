@@ -13,7 +13,15 @@ export default async function OnboardingLayout({ children }) {
 
   if (user.role !== "UNASSIGNED") {
     if (user.role === "PATIENT") redirect("/doctors")
-    if (user.role === "DOCTOR") redirect("/doctor")
+    
+    if (user.role === "DOCTOR") {
+      if (user.verificationStatus === "VERIFIED") {
+        redirect("/doctor")
+      } else {
+        redirect("/doctor/verification")
+      }
+    }
+    
     if (user.role === "ADMIN") redirect("/admin")
   }
 
@@ -24,10 +32,8 @@ export default async function OnboardingLayout({ children }) {
         <div className="absolute -top-40 -right-40 h-80 w-80 bg-primary/10 blur-3xl rounded-full" />
         <div className="absolute -bottom-40 -left-40 h-80 w-80 bg-teal/10 blur-3xl rounded-full" />
       </div>
-
-      {/* Page Content */}
+ 
       <main className="relative z-10">{children}</main>
     </div>
   )
 }
-

@@ -7,7 +7,6 @@ import ForDoctors from "./_components/ForDoctors";
 import Pricing from "./_components/Pricing";
 import FAQSection from "./_components/FAQ";
 import CTASection from "./_components/CTA";
-import ClerkPricing from "./_components/ClerkPricing";
 
 const page = () => {
   return (
@@ -18,7 +17,6 @@ const page = () => {
 <HowItWorks />
 <ForDoctors />
 <Pricing />
-{/* <ClerkPricing /> */}
 <CTASection />
 <Testimonials />
 <FAQSection />

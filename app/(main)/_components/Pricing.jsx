@@ -106,7 +106,7 @@ export default function Pricing() {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16 space-y-3">
           <div className="inline-block">
-            <Badge className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold text-primary dark:bg-teal-500/20 dark:text-teal-300">
+            <Badge className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-xs font-medium text-primary dark:bg-teal-500/20 dark:text-teal-300">
               Simple Pricing
             </Badge>
           </div>
