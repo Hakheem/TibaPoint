@@ -1,14 +1,15 @@
-import React from 'react'
+import React, { Suspense } from 'react'
 import { checkUser } from '@/lib/checkUser'
-import { Shield, Clock, XCircle, CheckCircle, FileText, AlertCircle, CreditCard } from 'lucide-react'
+import { Shield, Clock, XCircle, CheckCircle, FileText, AlertCircle, RefreshCw } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import ResubmissionForm from '@/components/forms/DoctorResubmissionForm'
 
 export const metadata = {
   title: "Verification Status - TibaPoint",
-  description: "Check your doctor verification status",
+  description: "Check your doctor verification status", 
 }
 
 const DoctorVerificationPage = async () => {
@@ -69,7 +70,7 @@ const DoctorVerificationPage = async () => {
             "• Insufficient experience in your field"
           ],
           nextSteps: [
-            "Update your profile information",
+            "Update your profile information below",
             "Upload clearer credential documents",
             "Verify your license number with the relevant board",
             "Contact support if you need clarification"
@@ -94,7 +95,6 @@ const DoctorVerificationPage = async () => {
   const statusConfig = getStatusConfig(user.verificationStatus)
   const Icon = statusConfig.icon
 
-  // Format date
   const formatDate = (dateString) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('en-US', {
@@ -106,16 +106,16 @@ const DoctorVerificationPage = async () => {
 
   return (
     <div className="min-h-screen ">
-      <div className="max-w-6xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto px-4 pb-8 pt-16 md:pt-24 lg:pt-20">
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-6">
-            <Shield className="w-10 h-10 text-primary" />
+            <Shield className="size-8 md:size-10 text-primary" />
           </div>
-          <h1 className="text-4xl font-bold text-gray-900 mb-3">
-            Doctor Verification
+          <h1 className="text-3xl md:text-4xl font-bold mb-3">
+            Doctor Verification Status
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Track your verification status and access next steps
           </p>
         </div>
@@ -123,26 +123,31 @@ const DoctorVerificationPage = async () => {
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Status Card */}
           <div className="lg:col-span-2">
-            <Card className={`${statusConfig.borderColor} border-2 overflow-hidden`}>
-              <CardHeader className={`${statusConfig.bgColor} pb-4`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className={`p-3 rounded-lg bg-white border ${statusConfig.borderColor}`}>
-                      <Icon className={`w-8 h-8 ${statusConfig.iconColor}`} />
-                    </div>
-                    <div>
-                      <CardTitle className={`text-2xl ${statusConfig.color} mb-1`}>
-                        {statusConfig.title}
-                      </CardTitle>
-                      <CardDescription className="text-gray-700">
-                        {statusConfig.description}
-                      </CardDescription>
+            <Card className={`${statusConfig.borderColor} border overflow-hidden`}>
+              <CardHeader className={`${statusConfig.bgColor} p-6`}>
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="col-span-2">
+                    <div className="flex items-center space-x-4">
+                      <div className={`p-3 rounded-lg bg-white border ${statusConfig.borderColor}`}>
+                        <Icon className={`w-8 h-8 ${statusConfig.iconColor}`} />
+                      </div>
+                      <div>
+                        <CardTitle className={`text-2xl ${statusConfig.color} mb-1`}>
+                          {statusConfig.title}
+                        </CardTitle>
+                        <CardDescription className="text-muted-foreground">
+                          {statusConfig.description}
+                        </CardDescription>
+                      </div>
                     </div>
                   </div>
-                  <div className={`px-4 py-2 rounded-full ${statusConfig.bgColor} border ${statusConfig.borderColor}`}>
-                    <span className={`font-semibold ${statusConfig.color}`}>
-                      {statusConfig.statusLabel}
-                    </span>
+
+                  <div className="flex items-center justify-end">
+                    <div className={`px-4 py-2 rounded-full ${statusConfig.bgColor} border ${statusConfig.borderColor} whitespace-nowrap`}>
+                      <span className={`font-semibold text-sm ${statusConfig.color}`}>
+                        {statusConfig.statusLabel}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </CardHeader>
@@ -152,7 +157,7 @@ const DoctorVerificationPage = async () => {
                 <div className="grid md:grid-cols-2 gap-8 mb-8">
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
                         <FileText className="w-5 h-5 mr-2 text-primary" />
                         Your Information
                       </h3>
@@ -183,7 +188,7 @@ const DoctorVerificationPage = async () => {
 
                   <div className="space-y-6">
                     <div>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                      <h3 className="text-lg font-semibold mb-4 flex items-center">
                         <AlertCircle className="w-5 h-5 mr-2 text-primary" />
                         {statusConfig.tips.length > 0 ? 'Important Notes' : 'What to Expect'}
                       </h3>
@@ -212,7 +217,7 @@ const DoctorVerificationPage = async () => {
                 {/* Next Steps Section */}
                 {statusConfig.nextSteps.length > 0 && (
                   <div className="mb-8">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Next Steps</h3>
+                    <h3 className="text-lg font-semibold mb-4">Next Steps</h3>
                     <div className="grid sm:grid-cols-2 gap-4">
                       {statusConfig.nextSteps.map((step, index) => (
                         <div key={index} className="flex items-center p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
@@ -226,41 +231,27 @@ const DoctorVerificationPage = async () => {
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t">
-                  {user.verificationStatus === "REJECTED" ? (
-                    <>
-                      <Button asChild className="bg-primary hover:bg-primary/90">
-                        <Link href="/doctor/profile/edit">
-                          Update Profile Information
-                        </Link>
-                      </Button>
-                      <Button asChild variant="outline">
-                        <Link href="/support">
-                          Contact Support
-                        </Link>
-                      </Button>
-                    </>
-                  ) : (
-                    <>
-                      <Button asChild variant="outline">
-                        <Link href="/doctor/profile/edit">
-                          Edit Profile
-                        </Link>
-                      </Button>
-                      <Button asChild>
-                        <Link href="/doctor/setup/availability">
-                          Set Up Availability
-                        </Link>
-                      </Button>
-                      <Button asChild variant="ghost">
-                        <Link href="/support">
-                          Need Help?
-                        </Link>
-                      </Button>
-                    </>
-                  )}
-                </div>
+                {/* Resubmission Form (only shown for rejected status) */}
+                {user.verificationStatus === "REJECTED" && (
+                  <div className="mt-8 pt-8 border-t">
+                    <div className="flex items-center mb-6">
+                      <RefreshCw className="h-6 w-6 text-primary mr-2" />
+                      <h3 className="text-xl font-semibold">Resubmit Your Verification</h3>
+                    </div>
+                    
+                    <Suspense fallback={
+                      <div className="flex justify-center items-center p-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                        <span className="ml-3">Loading form...</span>
+                      </div>
+                    }>
+                      <ResubmissionForm 
+                        currentUser={user}
+                        onBack={() => {/* handle back if needed */}}
+                      />
+                    </Suspense>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -279,8 +270,8 @@ const DoctorVerificationPage = async () => {
                       <CheckCircle className="w-4 h-4 text-green-600" />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Profile Creation</p>
-                      <p className="text-sm text-gray-500">Complete basic information</p>
+                      <p className="font-medium">Profile Creation</p>
+                      <p className="text-sm text-muted-foreground">Complete basic information</p>
                     </div>
                   </div>
                   
@@ -289,8 +280,8 @@ const DoctorVerificationPage = async () => {
                       <Icon className={`w-4 h-4 ${statusConfig.iconColor}`} />
                     </div>
                     <div>
-                      <p className="font-medium text-gray-900">Document Review</p>
-                      <p className="text-sm text-gray-500">
+                      <p className="font-medium">Document Review</p>
+                      <p className="text-sm text-muted-foreground">
                         {user.verificationStatus === "PENDING" 
                           ? "Under review (1-3 days)" 
                           : "Review completed"}
@@ -336,42 +327,10 @@ const DoctorVerificationPage = async () => {
                   </div>
                   
                   <Button asChild variant="outline" className="w-full">
-                    <Link href="/doctor/faq">
-                      View FAQ
+                    <Link href="/support">
+                      Contact Support
                     </Link>
                   </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Quick Links */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Quick Links</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <Link 
-                    href="/doctor/guidelines" 
-                    className="flex items-center text-gray-700 hover:text-primary p-2 hover:bg-gray-50 rounded"
-                  >
-                    <FileText className="w-4 h-4 mr-2" />
-                    <span>Doctor Guidelines</span>
-                  </Link>
-                  <Link 
-                    href="/pricing" 
-                    className="flex items-center text-gray-700 hover:text-primary p-2 hover:bg-gray-50 rounded"
-                  >
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    <span>Pricing & Earnings</span>
-                  </Link>
-                  <Link 
-                    href="/privacy" 
-                    className="flex items-center text-gray-700 hover:text-primary p-2 hover:bg-gray-50 rounded"
-                  >
-                    <Shield className="w-4 h-4 mr-2" />
-                    <span>Privacy Policy</span>
-                  </Link>
                 </div>
               </CardContent>
             </Card>
@@ -396,3 +355,5 @@ const DoctorVerificationPage = async () => {
 }
 
 export default DoctorVerificationPage
+
+

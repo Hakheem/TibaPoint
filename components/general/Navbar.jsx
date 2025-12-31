@@ -1,4 +1,3 @@
-// components/general/Navbar.jsx - SIMPLIFIED & WORKING
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -120,7 +119,7 @@ const Navbar = ({ dbUser }) => {
               </Link>
             )}
 
-            {/* Role-specific button */}
+            {/* Role-specific button */} 
             <Link href={roleConfig.href}>
               <Button 
                 variant={roleConfig.variant}

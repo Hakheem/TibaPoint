@@ -37,11 +37,9 @@ export default async function DoctorLayout({ children }) {
 
   if (!user) redirect("/sign-in")
   
-  // Check if user is a doctor
   if (user.role !== "DOCTOR") {
     redirect("/")
   }
-
 
   // For unverified doctors, show a limited layout
   const isVerified = user.verificationStatus === "VERIFIED"
@@ -49,9 +47,8 @@ export default async function DoctorLayout({ children }) {
   return (
     <div className="min-h-screen ">
       {isVerified ? (
-        // Full dashboard layout for verified doctors
-        <div className="flex flex-col lg:flex-row">
-          {/* Sidebar for desktop */}
+        <div className="flex flex-col lg:flex-row ">
+          {/* Sidebar  */}
           <div className="hidden lg:block lg:w-64 lg:fixed lg:inset-y-0 lg:z-50">
             <DoctorSidebar user={user} />
           </div>

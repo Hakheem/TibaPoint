@@ -4,8 +4,6 @@ import { redirect } from 'next/navigation'
 const DoctorPage = async () => {
   const user = await checkUser()
 
-  // This page handles the /doctor route
-  // Redirect unverified doctors to verification page
   if (user && user.role === "DOCTOR" && user.verificationStatus !== "VERIFIED") {
     redirect("/doctor/verification")
   }

@@ -1,3 +1,4 @@
+// app/doctor/verification/_components/ResubmissionForm.jsx
 'use client'
 
 import { useState } from 'react'
@@ -13,10 +14,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { setUserRole } from '@/actions/onboarding'
-import { Loader2, Upload, X, AlertCircle } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { resubmitVerification } from '@/actions/doctor-verification'
+import { Loader2, Upload, X, AlertCircle, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
+
+// Import all the same icons and SVGs from your onboarding form
 import {
   Heart,
   Brain,
@@ -40,6 +43,7 @@ import {
   Circle,
 } from 'lucide-react'
 
+// Same SVG components from your onboarding form
 const Tooth = ({ className }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 2C10 2 8 3 8 5v7c0 1-1 2-1 4v4c0 1 1 2 2 2s2-1 2-2v-4c0-1 0-2 1-2s1 1 1 2v4c0 1 1 2 2 2s2-1 2-2v-4c0-2-1-3-1-4V5c0-2-2-3-4-3z" />
@@ -85,10 +89,11 @@ const Stomach = ({ className }) => (
 
 const Bone = ({ className }) => (
   <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 3a3 3 0 013 3 3 3 0 01-3 3h-1l-5 6h-1a3 3 0 01-3 3 3 3 0 01-3-3 3 3 0 013-3h1l5-6h1a3 3 0 013-3z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 3a3 3 0 013 3 a3 3 0 01-3 3h-1l-5 6h-1a3 3 0 01-3 3 a3 3 0 01-3-3 a3 3 0 013-3h1l5-6h1a3 3 0 013-3z" />
   </svg>
 )
 
+// Same SPECIALITIES array from your onboarding form
 const SPECIALITIES = [
   { value: 'General Practice', icon: Heart, color: 'text-red-500' },
   { value: 'Family Medicine', icon: Users, color: 'text-blue-500' },
@@ -126,13 +131,13 @@ const SPECIALITIES = [
   { value: 'Other', icon: Stethoscope, color: 'text-gray-500' },
 ]
 
-export default function DoctorOnboardingForm({ onBack }) {
+export default function ResubmissionForm({ currentUser, onBack }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [credentialFile, setCredentialFile] = useState(null)
   const [credentialPreview, setCredentialPreview] = useState(null)
   const [errors, setErrors] = useState({})
-  const [selectedSpeciality, setSelectedSpeciality] = useState('')
+  const [selectedSpeciality, setSelectedSpeciality] = useState(currentUser.speciality || '')
 
   const handleFileChange = async (e) => {
     const file = e.target.files?.[0]
@@ -182,8 +187,8 @@ export default function DoctorOnboardingForm({ onBack }) {
     setErrors({})
 
     const formData = new FormData(e.currentTarget)
-    formData.append('role', 'DOCTOR')
 
+    // Validate required fields
     const requiredFields = ['speciality', 'experience', 'licenseNumber', 'phone', 'city', 'bio']
     const missingFields = []
 
@@ -201,7 +206,7 @@ export default function DoctorOnboardingForm({ onBack }) {
       return
     }
 
-    if (!credentialFile) {
+    if (!credentialFile && !currentUser.credentialUrl) {
       toast.error('Document required', {
         description: 'Please upload your medical license or certificate',
       })
@@ -219,21 +224,25 @@ export default function DoctorOnboardingForm({ onBack }) {
     }
 
     try {
+      // Convert image to base64 if new file uploaded
       if (credentialFile) {
         const base64 = await compressAndConvertToBase64(credentialFile)
         formData.set('credentialUrl', base64)
+      } else {
+        // Use existing credential URL if no new file uploaded
+        formData.set('credentialUrl', currentUser.credentialUrl || '')
       }
 
-      const result = await setUserRole(formData)
+      const result = await resubmitVerification(formData)
 
       if (result.success) {
-        toast.success('Registration submitted', {
-          description: 'Your profile is under review. You will be notified once verified',
+        toast.success('Verification resubmitted', {
+          description: 'Your updated credentials have been submitted for review. You will be notified once verified.',
           duration: 5000,
         })
-        router.push(result.redirect)
+        router.refresh() // Refresh the page to show updated status
       } else {
-        toast.error('Registration failed', {
+        toast.error('Resubmission failed', {
           description: result.error || 'Please try again',
         })
         setLoading(false)
@@ -283,16 +292,17 @@ export default function DoctorOnboardingForm({ onBack }) {
   const selectedSpecialityData = SPECIALITIES.find(s => s.value === selectedSpeciality)
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle className="text-2xl">Doctor Registration</CardTitle>
-        <CardDescription>
-          Complete your professional profile. All information will be verified by our team
-        </CardDescription>
-      </CardHeader>
-
-      <CardContent>
+    <Card className="border border-gray-200">
+      <CardContent className="p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="mb-4">
+            <h4 className="text-lg font-semibold mb-2">Update Your Information</h4>
+            <p className="text-sm text-gray-600">
+              Please review and update any incorrect information. Upload new documents if needed.
+            </p>
+          </div>
+
+          {/* Speciality */}
           <div className="space-y-2">
             <Label htmlFor="speciality">Speciality *</Label>
             <Select 
@@ -300,6 +310,7 @@ export default function DoctorOnboardingForm({ onBack }) {
               required 
               onValueChange={setSelectedSpeciality}
               value={selectedSpeciality}
+              defaultValue={currentUser.speciality}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Select your speciality" />
@@ -332,6 +343,7 @@ export default function DoctorOnboardingForm({ onBack }) {
             )}
           </div>
 
+          {/* Experience */}
           <div className="space-y-2">
             <Label htmlFor="experience">Years of Experience *</Label>
             <Input
@@ -341,10 +353,12 @@ export default function DoctorOnboardingForm({ onBack }) {
               min="0"
               max="50"
               required
+              defaultValue={currentUser.experience || ''}
               placeholder="For example, 5"
             />
           </div>
 
+          {/* License Number */}
           <div className="space-y-2">
             <Label htmlFor="licenseNumber">Medical License Number *</Label>
             <Input
@@ -352,10 +366,12 @@ export default function DoctorOnboardingForm({ onBack }) {
               name="licenseNumber"
               id="licenseNumber"
               required
+              defaultValue={currentUser.licenseNumber || ''}
               placeholder="For example, KMP/12345"
             />
           </div>
 
+          {/* Phone */}
           <div className="space-y-2">
             <Label htmlFor="phone">Phone Number *</Label>
             <Input
@@ -363,10 +379,12 @@ export default function DoctorOnboardingForm({ onBack }) {
               name="phone"
               id="phone"
               required
+              defaultValue={currentUser.phone || ''}
               placeholder="For example, +254712345678"
             />
           </div>
 
+          {/* City */}
           <div className="space-y-2">
             <Label htmlFor="city">City *</Label>
             <Input
@@ -374,10 +392,12 @@ export default function DoctorOnboardingForm({ onBack }) {
               name="city"
               id="city"
               required
+              defaultValue={currentUser.city || ''}
               placeholder="For example, Nairobi"
             />
           </div>
 
+          {/* Bio */}
           <div className="space-y-2">
             <Label htmlFor="bio">Professional Bio *</Label>
             <Textarea
@@ -385,6 +405,7 @@ export default function DoctorOnboardingForm({ onBack }) {
               id="bio"
               required
               rows={4}
+              defaultValue={currentUser.bio || ''}
               placeholder="Tell us about your medical background, expertise, and what patients can expect from your consultations"
               className="resize-none"
             />
@@ -393,8 +414,15 @@ export default function DoctorOnboardingForm({ onBack }) {
             </p>
           </div>
 
+          {/* Credential Upload */}
           <div className="space-y-2">
             <Label>Medical License or Certificate *</Label>
+            <p className="text-sm text-gray-600 mb-2">
+              {currentUser.credentialUrl 
+                ? 'You have already uploaded a document. Upload a new one only if you need to update it.'
+                : 'Please upload your medical license or certificate'
+              }
+            </p>
             <div className="border-2 border-dashed rounded-lg p-6 text-center">
               {credentialPreview ? (
                 <div className="relative">
@@ -421,7 +449,7 @@ export default function DoctorOnboardingForm({ onBack }) {
                       htmlFor="credential"
                       className="cursor-pointer text-primary hover:underline"
                     >
-                      Click to upload
+                      {currentUser.credentialUrl ? 'Upload new document' : 'Click to upload'}
                     </Label>
                     <Input
                       type="file"
@@ -429,7 +457,6 @@ export default function DoctorOnboardingForm({ onBack }) {
                       accept="image/*"
                       className="hidden"
                       onChange={handleFileChange}
-                      required
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
@@ -443,31 +470,36 @@ export default function DoctorOnboardingForm({ onBack }) {
             )}
           </div>
 
+          {/* Information Box */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-start">
               <AlertCircle className="h-5 w-5 text-blue-600 mr-2 flex-shrink-0 mt-0.5" />
               <div>
-                <p className="text-sm text-blue-800 font-medium">Verification Process</p>
+                <p className="text-sm text-blue-800 font-medium">Resubmission Process</p>
                 <p className="text-xs text-blue-700 mt-1">
-                  Your profile will be reviewed within 24-48 hours. You will receive an email notification once verified. Until then, you can access basic features
+                  Your updated information will be reviewed within 24-48 hours. Your verification status will be reset to "Pending" until the review is complete.
                 </p>
-              </div> 
+              </div>
             </div>
           </div>
 
+          {/* Submit Button */}
           <div className="space-y-4">
             <Button
               type="submit"
-              disabled={loading || !credentialFile}
+              disabled={loading}
               className="w-full bg-teal-600 hover:bg-teal-700"
             >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Submitting for verification
+                  Resubmitting for verification
                 </>
               ) : (
-                'Submit for Verification'
+                <>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Resubmit Verification
+                </>
               )}
             </Button>
 
@@ -477,12 +509,12 @@ export default function DoctorOnboardingForm({ onBack }) {
               onClick={onBack}
               className="w-full"
             >
-              Back to selection
+              Cancel
             </Button>
           </div>
 
           <p className="text-xs text-center text-muted-foreground">
-            Your profile will be reviewed within 24-48 hours. You will receive an email once approved
+            Your updated information will be reviewed within 24-48 hours. You will receive an email once approved.
           </p>
         </form>
       </CardContent>

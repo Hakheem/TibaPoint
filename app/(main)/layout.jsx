@@ -3,7 +3,6 @@ import Footer from "@/components/general/Footer";
 import Navbar from "@/components/general/Navbar";
 
 export default async function MainLayout({ children }) {
-  // Get user data on server
   const dbUser = await checkUser()
   
   return (

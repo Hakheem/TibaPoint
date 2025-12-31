@@ -35,7 +35,7 @@ export default function Testimonials() {
       id: 3,
       avatar: "/testimonial2.png",
       quote:
-        "The token system is brilliant, purchased a package and booked appointments on-demand. My therapist has been consistent and supportive throughout.",
+        "The credit system is brilliant, purchased a package and booked appointments on-demand. My therapist has been consistent and supportive throughout.",
       name: "Grace W.",
       location: "Jinja",
       rating: 5,

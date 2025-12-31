@@ -1,4 +1,3 @@
-// app/(onboarding)/page.jsx
 'use client'
 
 import React, { useState } from 'react'
@@ -14,21 +13,14 @@ export default function OnboardingMainPage() {
 
   const handlePatientSelect = () => {
     setStep('patient')
-    toast.success('Patient profile selected', {
-      description: 'You can now complete your patient profile',
-    })
   }
 
   const handleDoctorSelect = () => {
     setStep('doctor')
-    toast.info('Doctor registration selected', {
-      description: 'Please provide your professional details for verification',
-    })
   }
 
   const handleBack = () => {
     setStep('select')
-    toast.info('Returned to role selection')
   }
 
   // patient onboarding card
