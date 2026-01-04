@@ -79,7 +79,6 @@ export default function CTASection() {
 
           {/* Right Column: Image Container */}
           <div className="relative overflow-visible">
-            {/* Image positioned to overflow only at top */}
             <div className="relative lg:absolute bottom-0 lg:bottom-24 left-1/2 -translate-x-1/2 w-full max-w-[500px] md:max-w-[500px] lg:max-w-[700px] h-[350px] md:h-[400px] lg:h-[600px]">
               <div className="relative w-full h-full lg:h-[150%]">
                 {/* Mobile/Tablet */}

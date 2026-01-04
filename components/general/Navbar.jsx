@@ -22,6 +22,7 @@ import {
 
 const Navbar = ({ dbUser }) => {
   const [scrolled, setScrolled] = useState(false);
+  const [isClient, setIsClient] = useState(false); // Track if we're on client
   
   // Safely extract user data
   const role = dbUser?.role || "UNASSIGNED";
@@ -29,7 +30,14 @@ const Navbar = ({ dbUser }) => {
   const consultations = Math.floor(credits / 2);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 10);
+    setIsClient(true); // Set to true when component mounts on client
+    
+    const onScroll = () => {
+      setScrolled(window.scrollY > 10);
+    };
+    
+    // Only run on client
+    onScroll(); // Initial check
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -69,14 +77,17 @@ const Navbar = ({ dbUser }) => {
 
   const roleConfig = getRoleConfig();
 
-  return (
-    <header
-      className={`fixed inset-x-0 top-0 z-50 transition-all ${
+  // Only apply scroll-based styles on client to avoid hydration mismatch
+  const headerClass = !isClient 
+    ? "fixed inset-x-0 top-0 z-50 bg-transparent" 
+    : `fixed inset-x-0 top-0 z-50 transition-all ${
         scrolled
           ? "bg-white/70 dark:bg-gray-900/70 backdrop-blur shadow"
           : "bg-transparent"
-      }`}
-    >
+      }`;
+
+  return (
+    <header className={headerClass}>
       <nav className="container padded mx-auto flex items-center justify-between py-4">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
