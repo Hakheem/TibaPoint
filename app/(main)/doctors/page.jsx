@@ -9,7 +9,7 @@ const DoctorsMainPage = () => {
   return (
     <div className="min-h-screen">
       {/* Hero Section */}
-      <div className="bg-linear-to-b from-primary/5 to-transparent py-12 md:py-20">
+      <div className="bg-linear-to-b from-primary/5 to-transparent py-20">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="text-center space-y-6">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
