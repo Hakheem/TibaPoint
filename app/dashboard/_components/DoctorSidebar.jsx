@@ -15,6 +15,7 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronRight,
+  CalendarClock
 } from 'lucide-react'
 
 const DoctorSidebar = ({ user }) => {
@@ -23,29 +24,29 @@ const DoctorSidebar = ({ user }) => {
   const pathname = usePathname()
 
   const navigation = [
-    { name: 'Dashboard', href: '/doctor', icon: Home },
-    { name: 'Appointments', href: '/doctor/appointments', icon: Calendar },
-    { name: 'Patients', href: '/doctor/patients', icon: Users },
-    { name: 'Earnings', href: '/doctor/earnings', icon: CreditCard },
-    { name: 'Messages', href: '/doctor/messages', icon: MessageSquare },
-    { name: 'Profile', href: '/doctor/profile', icon: User },
-    { name: 'Analytics', href: '/doctor/analytics', icon: BarChart3 },
+    { name: 'Dashboard', href: '/dashboard', icon: Home },
+    { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
+    { name: 'Patients', href: '/dashboard/patients', icon: Users },
+    { name: 'Availability', href: '/dashboard/availability', icon: CalendarClock },
+    { name: 'Messages', href: '/dashboard/messages', icon: MessageSquare },
+    { name: 'Profile', href: '/dashboard/profile', icon: User },
+    { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
     { 
       name: 'Settings', 
-      href: '/doctor/settings', 
+      href: '/dashboard/settings', 
       icon: Bell,
       subItems: [
-        { name: 'General Settings', href: '/doctor/settings' },
-        { name: 'Availability', href: '/doctor/settings/availability' },
-        { name: 'Notifications', href: '/doctor/settings/notifications' },
-        { name: 'Security', href: '/doctor/settings/security' },
+        { name: 'General Settings', href: '/dashboard/settings' },
+        { name: 'Availability', href: '/dashboard/availability' },
+        { name: 'Notifications', href: '/dashboard/settings/notifications' },
+        { name: 'Security', href: '/dashboard/settings/security' },
       ]
     },
   ]
 
   const isActive = (href) => {
-    if (href === '/doctor') {
-      return pathname === '/doctor'
+    if (href === '/dashboard') {
+      return pathname === '/dashboard'
     }
     return pathname.startsWith(href)
   }
@@ -63,7 +64,7 @@ const DoctorSidebar = ({ user }) => {
 
   const isExpanded = (itemName) => {
     // Auto-expand if subitem is active
-    if (isActive(`/doctor/${itemName.toLowerCase().replace(' ', '-')}`)) {
+    if (isActive(`/dashboard/${itemName.toLowerCase().replace(' ', '-')}`)) {
       return true
     }
     return expandedItems[itemName] || false

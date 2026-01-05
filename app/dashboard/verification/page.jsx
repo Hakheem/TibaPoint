@@ -24,7 +24,7 @@ const DoctorVerificationPage = async () => {
 
   // If doctor is already verified, redirect to dashboard
   if (user.verificationStatus === "VERIFIED") {
-    redirect("/doctor")
+    redirect("/dashboard")
   }
 
   const getStatusConfig = (status) => {

@@ -53,7 +53,7 @@ const Navbar = ({ dbUser }) => {
         };
       case "DOCTOR":
         return {
-          href: "/doctor",
+          href: "/dashboard",
           text: "Dashboard",
           icon: <Stethoscope className="h-4 w-4" />,
           variant: "secondary"

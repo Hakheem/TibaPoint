@@ -1,7 +1,6 @@
-// app/(dashboard)/doctor/page.jsx
 import { checkUser } from '@/lib/checkUser'
 import { redirect } from 'next/navigation'
-import { getDoctorStats, getDoctorAppointments } from '@/app/actions/doctors'
+import { getDoctorStats, getDoctorAppointments } from '@/actions/doctors'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -13,11 +12,11 @@ import {
   Clock,
   TrendingUp,
   Activity,
-  CheckCircle,
-  XCircle
+  CheckCircle
 } from 'lucide-react'
 import Link from 'next/link'
 import { format } from 'date-fns'
+import { AvailabilitySummary } from './_components/AvailabilitySummary'
 
 const DoctorPage = async () => {
   const user = await checkUser()
@@ -31,7 +30,7 @@ const DoctorPage = async () => {
   }
 
   if (user.verificationStatus !== 'VERIFIED') {
-    redirect('/doctor/verification-pending')
+    redirect('/dashboard/verification')
   }
 
   // Fetch doctor stats and today's appointments
@@ -57,7 +56,7 @@ const DoctorPage = async () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
+    <div className="space-y-6 ">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -233,7 +232,7 @@ const DoctorPage = async () => {
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white font-semibold">
+                    <div className="h-12 w-12 rounded-full bg-linear-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white font-semibold">
                       {appointment.patient.name.charAt(0)}
                     </div>
                     <div>
@@ -247,7 +246,7 @@ const DoctorPage = async () => {
                     <Badge className={getStatusColor(appointment.status)}>
                       {appointment.status}
                     </Badge>
-                    <Link href={`/doctor/appointments/${appointment.id}`}>
+                    <Link href={`/dashboard/appointments/${appointment.id}`}>
                       <Button size="sm" variant="ghost">
                         View
                       </Button>
@@ -262,7 +261,7 @@ const DoctorPage = async () => {
               <p className="text-muted-foreground">
                 No appointments scheduled for today
               </p>
-              <Link href="/doctor/availability">
+              <Link href="/dashboard/availability">
                 <Button variant="link" className="mt-2">
                   Set your availability
                 </Button>
@@ -312,66 +311,70 @@ const DoctorPage = async () => {
           </CardContent>
         </Card>
 
-        {/* Performance Summary */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5" />
-              Performance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Completion Rate
-                </span>
+
+        <AvailabilitySummary />
+      </div>
+
+      {/* Performance Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Performance
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                Completion Rate
+              </span>
+              <span className="font-semibold">
+                {stats?.totalAppointments > 0
+                  ? Math.round(
+                      (stats.completedAppointments / stats.totalAppointments) * 100
+                    )
+                  : 0}
+                %
+              </span>
+            </div>
+            <div className="w-full bg-muted rounded-full h-2">
+              <div
+                className="bg-gradient-primary h-2 rounded-full"
+                style={{
+                  width: `${
+                    stats?.totalAppointments > 0
+                      ? (stats.completedAppointments / stats.totalAppointments) * 100
+                      : 0
+                  }%`,
+                }}
+              />
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-sm text-muted-foreground">
+                Average Rating
+              </span>
+              <div className="flex items-center gap-1">
+                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                 <span className="font-semibold">
-                  {stats?.totalAppointments > 0
-                    ? Math.round(
-                        (stats.completedAppointments / stats.totalAppointments) * 100
-                      )
-                    : 0}
-                  %
+                  {stats?.rating?.toFixed(1) || '0.0'}
                 </span>
-              </div>
-              <div className="w-full bg-muted rounded-full h-2">
-                <div
-                  className="bg-gradient-primary h-2 rounded-full"
-                  style={{
-                    width: `${
-                      stats?.totalAppointments > 0
-                        ? (stats.completedAppointments / stats.totalAppointments) * 100
-                        : 0
-                    }%`,
-                  }}
-                />
-              </div>
-
-              <div className="flex items-center justify-between pt-2">
-                <span className="text-sm text-muted-foreground">
-                  Average Rating
-                </span>
-                <div className="flex items-center gap-1">
-                  <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                  <span className="font-semibold">
-                    {stats?.rating?.toFixed(1) || '0.0'}
-                  </span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">
-                  Total Reviews
-                </span>
-                <span className="font-semibold">{stats?.totalReviews || 0}</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-muted-foreground">
+                Total Reviews
+              </span>
+              <span className="font-semibold">{stats?.totalReviews || 0}</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
 
 export default DoctorPage
+

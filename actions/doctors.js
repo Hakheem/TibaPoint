@@ -206,7 +206,7 @@ export async function updateDoctorProfile(formData) {
       },
     });
 
-    revalidatePath("/doctor");
+    revalidatePath("/dashboard");
     return { success: true, doctor: updatedDoctor };
   } catch (error) {
     console.error("Failed to update profile:", error);
@@ -338,7 +338,7 @@ export async function setAvailability(dayOfWeek, startTime, endTime) {
         },
       });
 
-      revalidatePath("/doctor/availability");
+      revalidatePath("/dashboard/availability");
       return { success: true, availability: updated };
     } else {
       // Create new
@@ -352,7 +352,7 @@ export async function setAvailability(dayOfWeek, startTime, endTime) {
         },
       });
 
-      revalidatePath("/doctor/availability");
+      revalidatePath("/dashboard/availability");
       return { success: true, availability: newAvailability };
     }
   } catch (error) {
@@ -430,7 +430,7 @@ export async function deleteAvailability(availabilityId) {
       where: { id: availabilityId },
     });
 
-    revalidatePath("/doctor/availability");
+    revalidatePath("/dashboard/availability");
     return { success: true };
   } catch (error) {
     console.error("Failed to delete availability:", error);
@@ -465,7 +465,7 @@ export async function toggleDoctorAvailability() {
       },
     });
 
-    revalidatePath("/doctor");
+    revalidatePath("/dashboard");
     return { success: true, isAvailable: updated.isAvailable };
   } catch (error) {
     console.error("Failed to toggle availability:", error);
@@ -591,7 +591,7 @@ export async function completeAppointment(appointmentId, notes, diagnosis, presc
       },
     });
 
-    revalidatePath("/doctor/appointments");
+    revalidatePath("/dashboard/appointments");
     return { success: true, appointment: updated };
   } catch (error) {
     console.error("Failed to complete appointment:", error);
