@@ -4,6 +4,9 @@ import { db } from "@/lib/db";
 import { auth } from '@clerk/nextjs/server' 
 import { revalidatePath } from 'next/cache'
 
+// ============================================
+// PUBLIC DOCTOR FUNCTIONS (No Auth Required)
+// ============================================
 
 export async function getDoctorsBySpeciality(speciality) {
   try {
@@ -12,7 +15,7 @@ export async function getDoctorsBySpeciality(speciality) {
         role: "DOCTOR",
         verificationStatus: "VERIFIED",
         doctorStatus: "ACTIVE",
-        speciality: speciality || undefined, 
+        ...(speciality && { speciality }),
       },
       select: {
         id: true,
@@ -28,16 +31,16 @@ export async function getDoctorsBySpeciality(speciality) {
         isAvailable: true,
       },
       orderBy: {
-        rating: "desc", // Show highest rated first
+        rating: "desc",
       },
     });
-    return { doctors };
+    
+    return { success: true, doctors };
   } catch (error) {
     console.error("Failed to fetch doctors by speciality:", error);
-    return { error: "Failed to fetch doctors" };
+    return { success: false, error: "Failed to fetch doctors" };
   }
 }
-
 
 export async function getAllVerifiedDoctors(filters = {}) {
   try {
@@ -75,13 +78,12 @@ export async function getAllVerifiedDoctors(filters = {}) {
       },
     });
 
-    return { doctors };
+    return { success: true, doctors };
   } catch (error) {
     console.error("Failed to fetch doctors:", error);
-    return { error: "Failed to fetch doctors" };
+    return { success: false, error: "Failed to fetch doctors" };
   }
 }
-
 
 export async function getDoctorPublicProfile(doctorId) {
   try {
@@ -124,13 +126,13 @@ export async function getDoctorPublicProfile(doctorId) {
     });
 
     if (!doctor) {
-      return { error: "Doctor not found" };
+      return { success: false, error: "Doctor not found" };
     }
 
-    return { doctor };
+    return { success: true, doctor };
   } catch (error) {
     console.error("Failed to fetch doctor profile:", error);
-    return { error: "Failed to fetch doctor profile" };
+    return { success: false, error: "Failed to fetch doctor profile" };
   }
 }
 
@@ -138,18 +140,14 @@ export async function getDoctorPublicProfile(doctorId) {
 // DOCTOR FUNCTIONS (Auth Required)
 // ============================================
 
-/**
- * Get current doctor's full profile
- * Used by: Doctor dashboard
- */
-export async function  getDoctorProfile() {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
+export async function getDoctorProfile() {
   try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const doctor = await db.user.findUnique({
       where: {
         clerkUserId: userId,
@@ -163,25 +161,24 @@ export async function  getDoctorProfile() {
     });
 
     if (!doctor) {
-      throw new Error("Doctor not found");
+      return { success: false, error: "Doctor not found" };
     }
 
-    return { doctor };
+    return { success: true, doctor };
   } catch (error) {
     console.error("Failed to fetch doctor profile:", error);
-    throw new Error("Failed to fetch doctor profile: " + error.message);
+    return { success: false, error: "Failed to fetch doctor profile" };
   }
 }
 
-
 export async function updateDoctorProfile(formData) {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
   try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const doctor = await db.user.findUnique({
       where: {
         clerkUserId: userId,
@@ -190,7 +187,7 @@ export async function updateDoctorProfile(formData) {
     });
 
     if (!doctor) {
-      throw new Error("Doctor not found");
+      return { success: false, error: "Doctor not found" };
     }
 
     const bio = formData.get("bio");
@@ -210,19 +207,18 @@ export async function updateDoctorProfile(formData) {
     return { success: true, doctor: updatedDoctor };
   } catch (error) {
     console.error("Failed to update profile:", error);
-    throw new Error("Failed to update profile: " + error.message);
+    return { success: false, error: "Failed to update profile" };
   }
 }
 
-
 export async function getDoctorStats() {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
   try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const doctor = await db.user.findUnique({
       where: {
         clerkUserId: userId,
@@ -231,7 +227,7 @@ export async function getDoctorStats() {
     });
 
     if (!doctor) {
-      throw new Error("Doctor not found");
+      return { success: false, error: "Doctor not found" };
     }
 
     // Total appointments
@@ -256,7 +252,7 @@ export async function getDoctorStats() {
       },
     });
 
-    // Calculate total earnings
+    // Calculate total earnings using doctorEarnings field
     const appointments = await db.appointment.findMany({
       where: {
         doctorId: doctor.id,
@@ -273,17 +269,20 @@ export async function getDoctorStats() {
     );
 
     return {
-      totalAppointments,
-      completedAppointments,
-      upcomingAppointments,
-      totalEarnings,
-      rating: doctor.rating,
-      totalReviews: doctor.totalReviews,
-      creditBalance: doctor.creditBalance,
+      success: true,
+      stats: {
+        totalAppointments,
+        completedAppointments,
+        upcomingAppointments,
+        totalEarnings: Math.round(totalEarnings),
+        rating: doctor.rating || 0,
+        totalReviews: doctor.totalReviews,
+        creditBalance: doctor.creditBalance || 0,
+      }
     };
   } catch (error) {
     console.error("Failed to fetch doctor stats:", error);
-    throw new Error("Failed to fetch stats: " + error.message);
+    return { success: false, error: "Failed to fetch stats" };
   }
 }
 
@@ -292,13 +291,13 @@ export async function getDoctorStats() {
 // ============================================
 
 export async function setAvailability(dayOfWeek, startTime, endTime) {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
   try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const doctor = await db.user.findUnique({
       where: {
         clerkUserId: userId,
@@ -307,16 +306,16 @@ export async function setAvailability(dayOfWeek, startTime, endTime) {
     });
 
     if (!doctor) {
-      throw new Error("Doctor not found");
+      return { success: false, error: "Doctor not found" };
     }
 
     // Validate inputs
     if (dayOfWeek < 0 || dayOfWeek > 6) {
-      throw new Error("Invalid day of week");
+      return { success: false, error: "Invalid day of week" };
     }
 
     if (!startTime || !endTime) {
-      throw new Error("Start time and end time are required");
+      return { success: false, error: "Start time and end time are required" };
     }
 
     // Check if availability already exists for this day
@@ -327,9 +326,10 @@ export async function setAvailability(dayOfWeek, startTime, endTime) {
       },
     });
 
+    let result;
     if (existing) {
       // Update existing
-      const updated = await db.availability.update({
+      result = await db.availability.update({
         where: { id: existing.id },
         data: {
           startTime,
@@ -337,12 +337,9 @@ export async function setAvailability(dayOfWeek, startTime, endTime) {
           isAvailable: true,
         },
       });
-
-      revalidatePath("/dashboard/availability");
-      return { success: true, availability: updated };
     } else {
       // Create new
-      const newAvailability = await db.availability.create({
+      result = await db.availability.create({
         data: {
           doctorId: doctor.id,
           dayOfWeek,
@@ -351,25 +348,24 @@ export async function setAvailability(dayOfWeek, startTime, endTime) {
           isAvailable: true,
         },
       });
-
-      revalidatePath("/dashboard/availability");
-      return { success: true, availability: newAvailability };
     }
+
+    revalidatePath("/dashboard/availability");
+    return { success: true, availability: result };
   } catch (error) {
     console.error("Failed to set availability:", error);
-    throw new Error("Failed to set availability: " + error.message);
+    return { success: false, error: "Failed to set availability" };
   }
 }
 
-
 export async function getDoctorAvailability() {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
   try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const doctor = await db.user.findUnique({
       where: {
         clerkUserId: userId,
@@ -378,7 +374,7 @@ export async function getDoctorAvailability() {
     });
 
     if (!doctor) {
-      throw new Error("Doctor not found");
+      return { success: false, error: "Doctor not found" };
     }
 
     const availabilitySlots = await db.availability.findMany({
@@ -390,22 +386,21 @@ export async function getDoctorAvailability() {
       },
     });
 
-    return { slots: availabilitySlots };
+    return { success: true, slots: availabilitySlots };
   } catch (error) {
     console.error("Failed to fetch availability:", error);
-    throw new Error("Failed to fetch availability: " + error.message);
+    return { success: false, error: "Failed to fetch availability" };
   }
 }
 
-
 export async function deleteAvailability(availabilityId) {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
   try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const doctor = await db.user.findUnique({
       where: {
         clerkUserId: userId,
@@ -414,7 +409,7 @@ export async function deleteAvailability(availabilityId) {
     });
 
     if (!doctor) {
-      throw new Error("Doctor not found");
+      return { success: false, error: "Doctor not found" };
     }
 
     // Verify this availability belongs to this doctor
@@ -423,7 +418,7 @@ export async function deleteAvailability(availabilityId) {
     });
 
     if (!availability || availability.doctorId !== doctor.id) {
-      throw new Error("Availability not found");
+      return { success: false, error: "Availability not found" };
     }
 
     await db.availability.delete({
@@ -434,19 +429,18 @@ export async function deleteAvailability(availabilityId) {
     return { success: true };
   } catch (error) {
     console.error("Failed to delete availability:", error);
-    throw new Error("Failed to delete availability: " + error.message);
+    return { success: false, error: "Failed to delete availability" };
   }
 }
 
-
 export async function toggleDoctorAvailability() {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
   try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
     const doctor = await db.user.findUnique({
       where: {
         clerkUserId: userId,
@@ -455,7 +449,7 @@ export async function toggleDoctorAvailability() {
     });
 
     if (!doctor) {
-      throw new Error("Doctor not found");
+      return { success: false, error: "Doctor not found" };
     }
 
     const updated = await db.user.update({
@@ -466,137 +460,11 @@ export async function toggleDoctorAvailability() {
     });
 
     revalidatePath("/dashboard");
+    revalidatePath("/dashboard/availability");
     return { success: true, isAvailable: updated.isAvailable };
   } catch (error) {
     console.error("Failed to toggle availability:", error);
-    throw new Error("Failed to toggle availability: " + error.message);
+    return { success: false, error: "Failed to toggle availability" };
   }
 }
-
-// ============================================
-// APPOINTMENT MANAGEMENT
-// ============================================
-
-export async function getDoctorAppointments(filter = "all") {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
-  try {
-    const doctor = await db.user.findUnique({
-      where: {
-        clerkUserId: userId,
-        role: "DOCTOR",
-      },
-    });
-
-    if (!doctor) {
-      throw new Error("Doctor not found");
-    }
-
-    const now = new Date();
-    let whereClause = { doctorId: doctor.id };
-
-    if (filter === "upcoming") {
-      whereClause.startTime = { gte: now };
-      whereClause.status = { in: ["SCHEDULED", "CONFIRMED"] };
-    } else if (filter === "past") {
-      whereClause.OR = [
-        { startTime: { lt: now } },
-        { status: "COMPLETED" },
-      ];
-    } else if (filter === "today") {
-      const startOfDay = new Date(now.setHours(0, 0, 0, 0));
-      const endOfDay = new Date(now.setHours(23, 59, 59, 999));
-      whereClause.startTime = { gte: startOfDay, lte: endOfDay };
-    }
-
-    const appointments = await db.appointment.findMany({
-      where: whereClause,
-      include: {
-        patient: {
-          select: {
-            id: true,
-            name: true,
-            imageUrl: true,
-            email: true,
-            phone: true,
-          },
-        },
-      },
-      orderBy: {
-        startTime: filter === "past" ? "desc" : "asc",
-      },
-    });
-
-    return { appointments };
-  } catch (error) {
-    console.error("Failed to fetch appointments:", error);
-    throw new Error("Failed to fetch appointments: " + error.message);
-  }
-}
-
-/**
- * Complete appointment and add notes
- * Used by: After consultation
- */
-export async function completeAppointment(appointmentId, notes, diagnosis, prescription) {
-  const { userId } = await auth();
-
-  if (!userId) {
-    throw new Error("Unauthorized");
-  }
-
-  try {
-    const doctor = await db.user.findUnique({
-      where: {
-        clerkUserId: userId,
-        role: "DOCTOR",
-      },
-    });
-
-    if (!doctor) {
-      throw new Error("Doctor not found");
-    }
-
-    const appointment = await db.appointment.findUnique({
-      where: { id: appointmentId },
-    });
-
-    if (!appointment || appointment.doctorId !== doctor.id) {
-      throw new Error("Appointment not found");
-    }
-
-    const updated = await db.appointment.update({
-      where: { id: appointmentId },
-      data: {
-        status: "COMPLETED",
-        completedAt: new Date(),
-        notes,
-        diagnosis,
-        prescription,
-      },
-    });
-
-    // Create notification for patient
-    await db.notification.create({
-      data: {
-        userId: appointment.patientId,
-        type: "APPOINTMENT",
-        title: "Consultation Completed",
-        message: `Your consultation with Dr. ${doctor.name} has been completed. Prescription and notes have been added to your records.`,
-        actionUrl: `/appointments/${appointmentId}`,
-      },
-    });
-
-    revalidatePath("/dashboard/appointments");
-    return { success: true, appointment: updated };
-  } catch (error) {
-    console.error("Failed to complete appointment:", error);
-    throw new Error("Failed to complete appointment: " + error.message);
-  }
-}
-
 

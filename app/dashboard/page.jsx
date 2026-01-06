@@ -1,6 +1,7 @@
 import { checkUser } from '@/lib/checkUser'
 import { redirect } from 'next/navigation'
-import { getDoctorStats, getDoctorAppointments } from '@/actions/doctors'
+import { getDoctorStats } from '@/actions/doctors'
+import { getDoctorAppointments } from '@/actions/appointments'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -34,9 +35,23 @@ const DoctorPage = async () => {
   }
 
   // Fetch doctor stats and today's appointments
-  const stats = await getDoctorStats()
-  const { appointments: todayAppointments } = await getDoctorAppointments('today')
-  const { appointments: upcomingAppointments } = await getDoctorAppointments('upcoming')
+  const statsResult = await getDoctorStats();
+  const todayAppointmentsResult = await getDoctorAppointments('today');
+  const upcomingAppointmentsResult = await getDoctorAppointments('upcoming');
+
+  // Handle potential errors
+  const stats = statsResult.success ? statsResult.stats : { 
+    totalAppointments: 0,
+    completedAppointments: 0,
+    upcomingAppointments: 0,
+    totalEarnings: 0,
+    rating: 0,
+    totalReviews: 0,
+    creditBalance: 0
+  };
+  
+  const todayAppointments = todayAppointmentsResult.success ? todayAppointmentsResult.appointments : [];
+  const upcomingAppointments = upcomingAppointmentsResult.success ? upcomingAppointmentsResult.appointments : [];
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -79,14 +94,14 @@ const DoctorPage = async () => {
               'Offline'
             )}
           </Badge>
-          <Link href="/doctor/availability">
+          <Link href="/dashboard/availability">
             <Button variant="outline">Manage Availability</Button>
           </Link>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Today's Appointments */}
         <Card>
           <CardContent className="p-6">
@@ -100,7 +115,7 @@ const DoctorPage = async () => {
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
                   {upcomingAppointments?.filter(apt => 
-                    apt.startTime > new Date()
+                    new Date(apt.startTime) > new Date()
                   ).length || 0} upcoming
                 </p>
               </div>
@@ -185,25 +200,25 @@ const DoctorPage = async () => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link href="/doctor/appointments">
+            <Link href="/dashboard/appointments">
               <Button variant="outline" className="w-full h-20 flex-col gap-2">
                 <Calendar className="h-5 w-5" />
                 View Appointments
               </Button>
             </Link>
-            <Link href="/doctor/availability">
+            <Link href="/dashboard/availability">
               <Button variant="outline" className="w-full h-20 flex-col gap-2">
                 <Clock className="h-5 w-5" />
                 Set Availability
               </Button>
             </Link>
-            <Link href="/doctor/earnings">
+            <Link href="/dashboard/earnings">
               <Button variant="outline" className="w-full h-20 flex-col gap-2">
                 <TrendingUp className="h-5 w-5" />
                 View Earnings
               </Button>
             </Link>
-            <Link href="/doctor/profile">
+            <Link href="/dashboard/profile">
               <Button variant="outline" className="w-full h-20 flex-col gap-2">
                 <Users className="h-5 w-5" />
                 Edit Profile
@@ -217,7 +232,7 @@ const DoctorPage = async () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Today's Schedule</CardTitle>
-          <Link href="/doctor/appointments">
+          <Link href="/dashboard/appointments">
             <Button variant="ghost" size="sm">
               View All
             </Button>
@@ -232,7 +247,7 @@ const DoctorPage = async () => {
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-linear-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white font-semibold">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white font-semibold">
                       {appointment.patient.name.charAt(0)}
                     </div>
                     <div>
@@ -311,7 +326,6 @@ const DoctorPage = async () => {
           </CardContent>
         </Card>
 
-
         <AvailabilitySummary />
       </div>
 
@@ -340,7 +354,7 @@ const DoctorPage = async () => {
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div
-                className="bg-gradient-primary h-2 rounded-full"
+                className="bg-gradient-to-r from-blue-500 to-teal-500 h-2 rounded-full"
                 style={{
                   width: `${
                     stats?.totalAppointments > 0

@@ -28,16 +28,15 @@ const DoctorSidebar = ({ user }) => {
     { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
     { name: 'Patients', href: '/dashboard/patients', icon: Users },
     { name: 'Availability', href: '/dashboard/availability', icon: CalendarClock },
-    { name: 'Messages', href: '/dashboard/messages', icon: MessageSquare },
+    { name: 'Earnings', href: '/dashboard/earnings', icon: CreditCard },
     { name: 'Profile', href: '/dashboard/profile', icon: User },
-    { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+    // { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
     { 
       name: 'Settings', 
       href: '/dashboard/settings', 
       icon: Bell,
       subItems: [
         { name: 'General Settings', href: '/dashboard/settings' },
-        { name: 'Availability', href: '/dashboard/availability' },
         { name: 'Notifications', href: '/dashboard/settings/notifications' },
         { name: 'Security', href: '/dashboard/settings/security' },
       ]

@@ -16,9 +16,9 @@ export default async function OnboardingLayout({ children }) {
     
     if (user.role === "DOCTOR") {
       if (user.verificationStatus === "VERIFIED") {
-        redirect("/doctor")
+        redirect("/dashboard")
       } else {
-        redirect("/doctor/verification")
+        redirect("/dashboard/verification")
       }
     }
     

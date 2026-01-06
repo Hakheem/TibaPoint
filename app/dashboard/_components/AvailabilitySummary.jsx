@@ -20,8 +20,9 @@ export function AvailabilitySummary() {
 
   const loadAvailability = async () => {
     try {
+      setLoading(true);
       const result = await getDoctorAvailability();
-      if (result.slots) {
+      if (result.success && result.slots) {
         setSlots(result.slots);
       }
     } catch (error) {
@@ -89,7 +90,7 @@ export function AvailabilitySummary() {
             <Clock className="h-5 w-5" />
             Availability Summary
           </div>
-          <Link href="/doctor/availability">
+          <Link href="/dashboard/availability">
             <Button variant="ghost" size="sm">
               <ExternalLink className="h-4 w-4" />
             </Button>
@@ -103,13 +104,13 @@ export function AvailabilitySummary() {
               <Calendar className="h-4 w-4 text-muted-foreground" />
               <span className="text-sm text-muted-foreground">Available Days</span>
             </div>
-            <div className="flex gap-1">
+            <div className="flex gap-1 flex-wrap justify-end">
               {availableDays.length > 0 ? (
                 availableDays.map((day) => (
                   <Badge
                     key={day}
                     variant="outline"
-                    className="bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400"
+                    className="bg-green-50 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs"
                   >
                     {day}
                   </Badge>
@@ -117,7 +118,7 @@ export function AvailabilitySummary() {
               ) : (
                 <Badge
                   variant="outline"
-                  className="bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                  className="bg-red-50 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs"
                 >
                   None set
                 </Badge>
@@ -159,7 +160,7 @@ export function AvailabilitySummary() {
             </div>
           )}
           
-          <Link href="/doctor/availability" className="block pt-4">
+          <Link href="/dashboard/availability" className="block pt-4">
             <Button variant="outline" className="w-full">
               Manage Availability
             </Button>
@@ -169,3 +170,4 @@ export function AvailabilitySummary() {
     </Card>
   );
 }
+

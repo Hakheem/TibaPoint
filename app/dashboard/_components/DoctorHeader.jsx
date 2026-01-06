@@ -38,7 +38,7 @@ const DoctorHeader = ({ user }) => {
   }
 
   return (
-    <header className="bg-white dark:bg-gray-900 border-b shadow-sm">
+    <header className="bg-white dark:bg-gray-900 border-b shadow-sm  ">
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Left side - Title and mobile menu */}
