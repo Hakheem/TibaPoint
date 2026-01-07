@@ -38,8 +38,8 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { getDoctorAppointments } from "@/actions/appointments";
-import { completeAppointment } from "@/actions/appointments"; 
+import { getDoctorAppointments } from "@/actions/doctors";
+import { completeAppointment } from "@/actions/doctors"; 
 
 const AppointmentsPage = () => {
   const [appointments, setAppointments] = useState([]);
@@ -177,7 +177,7 @@ const AppointmentsPage = () => {
     );
   }
 
-  return (
+  return ( 
     <div className="space-y-6 ">
       {/* Header */}
       <div className="flex flex-col gap-4">
@@ -193,7 +193,7 @@ const AppointmentsPage = () => {
             />
           </div>
           <Select value={filter} onValueChange={setFilter}>
-            <SelectTrigger className="w-full sm:w-[180px]">
+            <SelectTrigger className="w-full sm:w-45">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Filter by" />
             </SelectTrigger>
@@ -278,7 +278,7 @@ const AppointmentsPage = () => {
                   className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-4"
                 >
                   <div className="flex items-start gap-4 flex-1">
-                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white font-semibold flex-shrink-0">
+                    <div className="h-12 w-12 rounded-full bg-linear-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white font-semibold shrink-0">
                       {appointment.patient.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">

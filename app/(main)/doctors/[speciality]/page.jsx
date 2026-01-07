@@ -116,7 +116,7 @@ const DoctorCard = ({ doctor }) => {
         <div className="space-y-2 text-sm">
           {doctor.experience && (
             <div className="flex items-center gap-2 text-muted-foreground">
-              <Clock className="h-4 w-4 flex-shrink-0" />
+              <Clock className="h-4 w-4 shrink-0" />
               <span className="truncate">
                 {doctor.experience} years experience
               </span>
@@ -125,7 +125,7 @@ const DoctorCard = ({ doctor }) => {
 
           {doctor.location && (
             <div className="flex items-center gap-2 text-muted-foreground">
-              <MapPin className="h-4 w-4 flex-shrink-0" />
+              <MapPin className="h-4 w-4 shrink-0" />
               <span className="truncate">{doctor.location}</span>
             </div>
           )}
@@ -140,7 +140,7 @@ const DoctorCard = ({ doctor }) => {
 
         {doctor.nextAvailable && (
           <div className="flex items-center gap-2 text-sm mt-3 p-2 bg-green-50 dark:bg-green-900/20 rounded-md">
-            <Calendar className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+            <Calendar className="h-4 w-4 text-green-600 dark:text-green-400 shrink-0" />
             <span className="text-green-600 dark:text-green-400 font-medium">
               Available {doctor.nextAvailable}
             </span>
@@ -232,7 +232,7 @@ const SpecialtyPage = async ({ params }) => {
       <div className="py-8" />
 
       {/* Specialty Header */}
-      <div className="py-8 md:py-12 bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5">
+      <div className="py-8 md:py-12 bg-linear-to-r from-primary/5 via-primary/10 to-primary/5">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex items-center gap-4">
@@ -372,7 +372,7 @@ const SpecialtyPage = async ({ params }) => {
                       "Referrals to other specialists if needed",
                     ].map((item, index) => (
                       <div key={index} className="flex items-start gap-3">
-                        <div className="flex-shrink-0 mt-0.5">
+                        <div className="shrink-0 mt-0.5">
                           <div className="h-2 w-2 rounded-full bg-primary mt-2" />
                         </div>
                         <span>{item}</span>
@@ -389,7 +389,7 @@ const SpecialtyPage = async ({ params }) => {
                       "Available for virtual consultations",
                     ].map((item, index) => (
                       <div key={index} className="flex items-start gap-3">
-                        <div className="flex-shrink-0 mt-0.5">
+                        <div className="shrink-0 mt-0.5">
                           <svg
                             className="h-5 w-5 text-green-500"
                             fill="none"
@@ -433,7 +433,7 @@ const SpecialtyPage = async ({ params }) => {
                           strokeWidth={2}
                           d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
                         />
-                      </svg>
+                      </svg>  
                       Need Help?
                     </CardTitle>
                   </CardHeader>

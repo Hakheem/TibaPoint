@@ -155,7 +155,10 @@ export async function getDoctorProfile() {
       },
       include: {
         availabilities: {
-          orderBy: { dayOfWeek: 'asc' },
+          orderBy: [
+            { dayOfWeek: 'asc' },
+            { startTime: 'asc' },
+          ],
         },
       },
     });
@@ -287,10 +290,10 @@ export async function getDoctorStats() {
 }
 
 // ============================================
-// AVAILABILITY MANAGEMENT
+// AVAILABILITY MANAGEMENT (UPDATED FOR HOURLY SLOTS)
 // ============================================
 
-export async function setAvailability(dayOfWeek, startTime, endTime) {
+export async function setAvailability(dayOfWeek, startTime, endTime, slotId = null) {
   try {
     const { userId } = await auth();
 
@@ -318,37 +321,68 @@ export async function setAvailability(dayOfWeek, startTime, endTime) {
       return { success: false, error: "Start time and end time are required" };
     }
 
-    // Check if availability already exists for this day
-    const existing = await db.availability.findFirst({
-      where: {
-        doctorId: doctor.id,
-        dayOfWeek: dayOfWeek,
-      },
-    });
+    // If editing an existing slot
+    if (slotId) {
+      // Verify the slot belongs to this doctor
+      const existingSlot = await db.availability.findUnique({
+        where: { id: slotId },
+      });
 
-    let result;
-    if (existing) {
-      // Update existing
-      result = await db.availability.update({
-        where: { id: existing.id },
-        data: {
-          startTime,
-          endTime,
-          isAvailable: true,
+      if (!existingSlot || existingSlot.doctorId !== doctor.id) {
+        return { success: false, error: "Slot not found or unauthorized" };
+      }
+
+      // Check if the updated time conflicts with another slot
+      const conflict = await db.availability.findFirst({
+        where: {
+          doctorId: doctor.id,
+          dayOfWeek: dayOfWeek,
+          startTime: startTime,
+          id: { not: slotId }, // Exclude the current slot being edited
         },
       });
-    } else {
-      // Create new
-      result = await db.availability.create({
+
+      if (conflict) {
+        return { success: false, error: "This time slot already exists" };
+      }
+
+      const result = await db.availability.update({
+        where: { id: slotId },
         data: {
-          doctorId: doctor.id,
           dayOfWeek,
           startTime,
           endTime,
           isAvailable: true,
         },
       });
+      
+      revalidatePath("/dashboard/availability");
+      return { success: true, availability: result };
     }
+
+    // Check if this exact slot already exists (prevent duplicates)
+    const existing = await db.availability.findFirst({
+      where: {
+        doctorId: doctor.id,
+        dayOfWeek: dayOfWeek,
+        startTime: startTime,
+      },
+    });
+
+    if (existing) {
+      return { success: false, error: "This time slot already exists" };
+    }
+
+    // Create new slot
+    const result = await db.availability.create({
+      data: {
+        doctorId: doctor.id,
+        dayOfWeek,
+        startTime,
+        endTime,
+        isAvailable: true,
+      },
+    });
 
     revalidatePath("/dashboard/availability");
     return { success: true, availability: result };
@@ -381,9 +415,10 @@ export async function getDoctorAvailability() {
       where: {
         doctorId: doctor.id,
       },
-      orderBy: {
-        dayOfWeek: 'asc',
-      },
+      orderBy: [
+        { dayOfWeek: 'asc' },
+        { startTime: 'asc' },
+      ],
     });
 
     return { success: true, slots: availabilitySlots };
@@ -468,3 +503,399 @@ export async function toggleDoctorAvailability() {
   }
 }
 
+// ============================================
+// HELPER FUNCTION FOR PATIENT BOOKING (YOU'LL USE THIS LATER)
+// ============================================
+
+export async function getDoctorAvailableSlots(doctorId, targetDate) {
+  try {
+    // Get the day of week from targetDate (0 = Sunday, 6 = Saturday)
+    const dayOfWeek = new Date(targetDate).getDay();
+
+    // Get doctor's availability slots for this day
+    const availabilitySlots = await db.availability.findMany({
+      where: {
+        doctorId: doctorId,
+        dayOfWeek: dayOfWeek,
+        isAvailable: true,
+      },
+      orderBy: {
+        startTime: 'asc',
+      },
+    });
+
+    // Get all booked appointments for this doctor on this date
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const bookedAppointments = await db.appointment.findMany({
+      where: {
+        doctorId: doctorId,
+        startTime: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
+        status: {
+          in: ["SCHEDULED", "CONFIRMED", "IN_PROGRESS"],
+        },
+      },
+      select: {
+        startTime: true,
+      },
+    });
+
+    // Create a set of booked time strings for easy lookup
+    const bookedTimes = new Set(
+      bookedAppointments.map(apt => {
+        const hours = apt.startTime.getHours().toString().padStart(2, '0');
+        const minutes = apt.startTime.getMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
+      })
+    );
+
+    // Filter out booked slots
+    const availableSlots = availabilitySlots.filter(slot => {
+      return !bookedTimes.has(slot.startTime);
+    });
+
+    return { success: true, slots: availableSlots };
+  } catch (error) {
+    console.error("Failed to fetch available slots:", error);
+    return { success: false, error: "Failed to fetch available slots" };
+  }
+}
+
+
+// ============================================
+// DOCTOR APPOINTMENT FUNCTIONS
+// ============================================
+
+export async function getDoctorAppointments(filter = "all") {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+ 
+    const doctor = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "DOCTOR",
+      },
+    });
+
+    if (!doctor) {
+      return { success: false, error: "Doctor not found" };
+    }
+
+    const now = new Date();
+    let whereClause = { doctorId: doctor.id };
+
+    if (filter === "upcoming") {
+      whereClause.startTime = { gte: now };
+      whereClause.status = { in: ["SCHEDULED", "CONFIRMED"] };
+    } else if (filter === "past") {
+      whereClause.OR = [
+        { startTime: { lt: now } },
+        { status: "COMPLETED" },
+      ];
+    } else if (filter === "today") {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+      const endOfDay = new Date();
+      endOfDay.setHours(23, 59, 59, 999);
+      whereClause.startTime = { gte: startOfDay, lte: endOfDay };
+    }
+
+    const appointments = await db.appointment.findMany({
+      where: whereClause,
+      include: {
+        patient: {
+          select: {
+            id: true,
+            name: true,
+            imageUrl: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+      orderBy: {
+        startTime: filter === "past" ? "desc" : "asc",
+      },
+    });
+
+    return { success: true, appointments };
+  } catch (error) {
+    console.error("Failed to fetch appointments:", error);
+    return { success: false, error: "Failed to fetch appointments" };
+  }
+}
+
+export async function getAppointmentById(appointmentId) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const user = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+      },
+    });
+
+    if (!user) {
+      return { success: false, error: "User not found" };
+    }
+
+    // Build where clause based on role
+    let whereClause = { id: appointmentId };
+    
+    if (user.role === "DOCTOR") {
+      whereClause.doctorId = user.id;
+    } else if (user.role === "PATIENT") {
+      whereClause.patientId = user.id;
+    }
+    // ADMIN can see all appointments (no additional filter)
+
+    const appointment = await db.appointment.findUnique({
+      where: whereClause,
+      include: {
+        patient: {
+          select: {
+            id: true,
+            name: true,
+            imageUrl: true,
+            email: true,
+            phone: true,
+            dateOfBirth: true,
+            gender: true,
+            address: true,
+            city: true,
+          },
+        },
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            imageUrl: true,
+            speciality: true,
+            phone: true,
+            email: true,
+          },
+        },
+        review: true,
+      },
+    });
+
+    if (!appointment) {
+      return { success: false, error: "Appointment not found" };
+    }
+
+    return { success: true, appointment };
+  } catch (error) {
+    console.error("Failed to fetch appointment:", error);
+    return { success: false, error: "Failed to fetch appointment" };
+  }
+}
+
+export async function completeAppointment(appointmentId, notes, diagnosis, prescription) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const doctor = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "DOCTOR",
+      },
+    });
+
+    if (!doctor) {
+      return { success: false, error: "Doctor not found" };
+    }
+
+    const appointment = await db.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+
+    if (!appointment || appointment.doctorId !== doctor.id) {
+      return { success: false, error: "Appointment not found" };
+    }
+
+    if (appointment.status === "COMPLETED") {
+      return { success: false, error: "Appointment already completed" };
+    }
+
+    if (appointment.status === "CANCELLED") {
+      return { success: false, error: "Cannot complete a cancelled appointment" };
+    }
+
+    // Calculate actual duration if startedAt exists
+    let actualDuration = null;
+    if (appointment.startedAt) {
+      const completedTime = new Date();
+      const startedTime = new Date(appointment.startedAt);
+      actualDuration = Math.round((completedTime - startedTime) / 60000); // Convert to minutes
+    }
+
+    const updated = await db.appointment.update({
+      where: { id: appointmentId },
+      data: {
+        status: "COMPLETED",
+        completedAt: new Date(),
+        actualDuration,
+        notes,
+        diagnosis,
+        prescription,
+      },
+    });
+
+    // Create notification for patient
+    await db.notification.create({
+      data: {
+        userId: appointment.patientId,
+        type: "APPOINTMENT",
+        title: "Consultation Completed",
+        message: `Your consultation with Dr. ${doctor.name} has been completed. Prescription and notes have been added to your records.`,
+        actionUrl: `/appointments/${appointmentId}`,
+      },
+    });
+
+    revalidatePath("/dashboard/appointments");
+    revalidatePath(`/dashboard/appointments/${appointmentId}`);
+    return { success: true, appointment: updated };
+  } catch (error) {
+    console.error("Failed to complete appointment:", error);
+    return { success: false, error: "Failed to complete appointment" };
+  }
+}
+
+export async function startAppointment(appointmentId) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const doctor = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "DOCTOR",
+      },
+    });
+
+    if (!doctor) {
+      return { success: false, error: "Doctor not found" };
+    }
+
+    const appointment = await db.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+
+    if (!appointment || appointment.doctorId !== doctor.id) {
+      return { success: false, error: "Appointment not found" };
+    }
+
+    if (appointment.status !== "SCHEDULED" && appointment.status !== "CONFIRMED") {
+      return { success: false, error: "Cannot start this appointment" };
+    }
+
+    const updated = await db.appointment.update({
+      where: { id: appointmentId },
+      data: {
+        status: "IN_PROGRESS",
+        startedAt: new Date(),
+      },
+    });
+
+    // Create notification for patient
+    await db.notification.create({
+      data: {
+        userId: appointment.patientId,
+        type: "APPOINTMENT",
+        title: "Consultation Started",
+        message: `Dr. ${doctor.name} has started your consultation.`,
+        actionUrl: `/appointments/${appointmentId}`,
+      },
+    });
+
+    revalidatePath("/dashboard/appointments");
+    revalidatePath(`/dashboard/appointments/${appointmentId}`);
+    return { success: true, appointment: updated };
+  } catch (error) {
+    console.error("Failed to start appointment:", error);
+    return { success: false, error: "Failed to start appointment" };
+  }
+}
+
+export async function cancelAppointment(appointmentId, reason) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const doctor = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "DOCTOR",
+      },
+    });
+
+    if (!doctor) {
+      return { success: false, error: "Doctor not found" };
+    }
+
+    const appointment = await db.appointment.findUnique({
+      where: { id: appointmentId },
+    });
+
+    if (!appointment || appointment.doctorId !== doctor.id) {
+      return { success: false, error: "Appointment not found" };
+    }
+
+    if (appointment.status === "COMPLETED" || appointment.status === "CANCELLED") {
+      return { success: false, error: "Cannot cancel this appointment" };
+    }
+
+    const updated = await db.appointment.update({
+      where: { id: appointmentId },
+      data: {
+        status: "CANCELLED",
+        cancelledBy: "DOCTOR",
+        cancellationReason: reason,
+        cancelledAt: new Date(),
+      },
+    });
+
+    // Create notification for patient
+    await db.notification.create({
+      data: {
+        userId: appointment.patientId,
+        type: "APPOINTMENT",
+        title: "Appointment Cancelled",
+        message: `Your appointment with Dr. ${doctor.name} has been cancelled. ${reason ? `Reason: ${reason}` : ''}`,
+        actionUrl: `/appointments/${appointmentId}`,
+      },
+    });
+
+    revalidatePath("/dashboard/appointments");
+    revalidatePath(`/dashboard/appointments/${appointmentId}`);
+    return { success: true, appointment: updated };
+  } catch (error) {  // ✅ Fixed: was 'Error'
+    console.error("Failed to cancel appointment:", error);
+    return { success: false, error: "Failed to cancel appointment" };
+  }
+}

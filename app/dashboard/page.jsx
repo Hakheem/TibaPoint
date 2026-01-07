@@ -1,7 +1,6 @@
 import { checkUser } from '@/lib/checkUser'
 import { redirect } from 'next/navigation'
-import { getDoctorStats } from '@/actions/doctors'
-import { getDoctorAppointments } from '@/actions/appointments'
+import { getDoctorStats, getDoctorAppointments } from '@/actions/doctors' // Fixed import
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -34,12 +33,12 @@ const DoctorPage = async () => {
     redirect('/dashboard/verification')
   }
 
-  // Fetch doctor stats and today's appointments
+  // Fetch doctor stats and today's appointments - USING YOUR ACTION FUNCTIONS
   const statsResult = await getDoctorStats();
   const todayAppointmentsResult = await getDoctorAppointments('today');
   const upcomingAppointmentsResult = await getDoctorAppointments('upcoming');
 
-  // Handle potential errors
+  // Handle potential errors - EXACTLY AS YOU HAD IT
   const stats = statsResult.success ? statsResult.stats : { 
     totalAppointments: 0,
     completedAppointments: 0,
@@ -71,8 +70,8 @@ const DoctorPage = async () => {
   }
 
   return (
-    <div className="space-y-6 ">
-      {/* Header */}
+    <div className="space-y-6">
+      {/* Header - USING USER DATA FROM checkUser */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Welcome back, Dr. {user.name}</h1>
@@ -100,9 +99,9 @@ const DoctorPage = async () => {
         </div>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Today's Appointments */}
+      {/* Stats Grid - USING DATA FROM getDoctorStats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Today's Appointments - USING todayAppointments */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -111,12 +110,12 @@ const DoctorPage = async () => {
                   Today's Appointments
                 </p>
                 <p className="text-3xl font-bold mt-2">
-                  {todayAppointments?.length || 0}
+                  {todayAppointments.length}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {upcomingAppointments?.filter(apt => 
-                    new Date(apt.startTime) > new Date()
-                  ).length || 0} upcoming
+                  {todayAppointments.filter(apt => 
+                    apt.status === 'CONFIRMED'
+                  ).length} confirmed
                 </p>
               </div>
               <div className="h-12 w-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
@@ -126,7 +125,7 @@ const DoctorPage = async () => {
           </CardContent>
         </Card>
 
-        {/* Total Completed */}
+        {/* Total Completed - USING stats */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -135,10 +134,10 @@ const DoctorPage = async () => {
                   Total Completed
                 </p>
                 <p className="text-3xl font-bold mt-2">
-                  {stats?.completedAppointments || 0}
+                  {stats.completedAppointments}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {stats?.totalAppointments || 0} total appointments
+                  {stats.totalAppointments} total appointments
                 </p>
               </div>
               <div className="h-12 w-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
@@ -148,7 +147,7 @@ const DoctorPage = async () => {
           </CardContent>
         </Card>
 
-        {/* Rating */}
+        {/* Rating - USING stats */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -157,10 +156,10 @@ const DoctorPage = async () => {
                   Your Rating
                 </p>
                 <p className="text-3xl font-bold mt-2">
-                  {stats?.rating?.toFixed(1) || '0.0'}
+                  {stats.rating?.toFixed(1) || '0.0'}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {stats?.totalReviews || 0} reviews
+                  {stats.totalReviews || 0} reviews
                 </p>
               </div>
               <div className="h-12 w-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
@@ -170,7 +169,7 @@ const DoctorPage = async () => {
           </CardContent>
         </Card>
 
-        {/* Earnings */}
+        {/* Earnings - USING stats */}
         <Card>
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
@@ -179,10 +178,10 @@ const DoctorPage = async () => {
                   Total Earnings
                 </p>
                 <p className="text-3xl font-bold mt-2">
-                  KSh {stats?.totalEarnings?.toLocaleString() || '0'}
+                  KSh {stats.totalEarnings?.toLocaleString() || '0'}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Balance: {stats?.creditBalance || 0} credits
+                  Balance: {stats.creditBalance || 0} credits
                 </p>
               </div>
               <div className="h-12 w-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
@@ -193,42 +192,7 @@ const DoctorPage = async () => {
         </Card>
       </div>
 
-      {/* Quick Actions */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Quick Actions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Link href="/dashboard/appointments">
-              <Button variant="outline" className="w-full h-20 flex-col gap-2">
-                <Calendar className="h-5 w-5" />
-                View Appointments
-              </Button>
-            </Link>
-            <Link href="/dashboard/availability">
-              <Button variant="outline" className="w-full h-20 flex-col gap-2">
-                <Clock className="h-5 w-5" />
-                Set Availability
-              </Button>
-            </Link>
-            <Link href="/dashboard/earnings">
-              <Button variant="outline" className="w-full h-20 flex-col gap-2">
-                <TrendingUp className="h-5 w-5" />
-                View Earnings
-              </Button>
-            </Link>
-            <Link href="/dashboard/profile">
-              <Button variant="outline" className="w-full h-20 flex-col gap-2">
-                <Users className="h-5 w-5" />
-                Edit Profile
-              </Button>
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Today's Schedule */}
+      {/* Today's Schedule - USING todayAppointments */}
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Today's Schedule</CardTitle>
@@ -239,7 +203,7 @@ const DoctorPage = async () => {
           </Link>
         </CardHeader>
         <CardContent>
-          {todayAppointments && todayAppointments.length > 0 ? (
+          {todayAppointments.length > 0 ? (
             <div className="space-y-4">
               {todayAppointments.slice(0, 5).map((appointment) => (
                 <div
@@ -247,7 +211,7 @@ const DoctorPage = async () => {
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white font-semibold">
+                    <div className="h-12 w-12 rounded-full bg-linear-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white font-semibold">
                       {appointment.patient.name.charAt(0)}
                     </div>
                     <div>
@@ -259,7 +223,7 @@ const DoctorPage = async () => {
                   </div>
                   <div className="flex items-center gap-3">
                     <Badge className={getStatusColor(appointment.status)}>
-                      {appointment.status}
+                      {appointment.status.replace('_', ' ')}
                     </Badge>
                     <Link href={`/dashboard/appointments/${appointment.id}`}>
                       <Button size="sm" variant="ghost">
@@ -288,7 +252,7 @@ const DoctorPage = async () => {
 
       {/* Recent Activity Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Upcoming Appointments */}
+        {/* Upcoming Appointments - USING upcomingAppointments */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -298,7 +262,7 @@ const DoctorPage = async () => {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {upcomingAppointments && upcomingAppointments.length > 0 ? (
+              {upcomingAppointments.length > 0 ? (
                 upcomingAppointments.slice(0, 3).map((appointment) => (
                   <div
                     key={appointment.id}
@@ -313,7 +277,7 @@ const DoctorPage = async () => {
                       </p>
                     </div>
                     <Badge variant="outline" className="text-xs">
-                      {appointment.status}
+                      {appointment.status.replace('_', ' ')}
                     </Badge>
                   </div>
                 ))
@@ -329,7 +293,7 @@ const DoctorPage = async () => {
         <AvailabilitySummary />
       </div>
 
-      {/* Performance Summary */}
+      {/* Performance Summary - USING stats */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -344,20 +308,19 @@ const DoctorPage = async () => {
                 Completion Rate
               </span>
               <span className="font-semibold">
-                {stats?.totalAppointments > 0
+                {stats.totalAppointments > 0
                   ? Math.round(
                       (stats.completedAppointments / stats.totalAppointments) * 100
                     )
-                  : 0}
-                %
+                  : 0}%
               </span>
             </div>
             <div className="w-full bg-muted rounded-full h-2">
               <div
-                className="bg-gradient-to-r from-blue-500 to-teal-500 h-2 rounded-full"
+                className="bg-linear-to-r from-blue-500 to-teal-500 h-2 rounded-full"
                 style={{
                   width: `${
-                    stats?.totalAppointments > 0
+                    stats.totalAppointments > 0
                       ? (stats.completedAppointments / stats.totalAppointments) * 100
                       : 0
                   }%`,
@@ -372,7 +335,7 @@ const DoctorPage = async () => {
               <div className="flex items-center gap-1">
                 <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
                 <span className="font-semibold">
-                  {stats?.rating?.toFixed(1) || '0.0'}
+                  {stats.rating?.toFixed(1) || '0.0'}
                 </span>
               </div>
             </div>
@@ -381,7 +344,7 @@ const DoctorPage = async () => {
               <span className="text-sm text-muted-foreground">
                 Total Reviews
               </span>
-              <span className="font-semibold">{stats?.totalReviews || 0}</span>
+              <span className="font-semibold">{stats.totalReviews || 0}</span>
             </div>
           </div>
         </CardContent>

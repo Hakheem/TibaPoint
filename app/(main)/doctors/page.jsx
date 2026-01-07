@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input'
 import { SPECIALITIES, generateSpecialtySlug } from '@/lib/specialities'
 
 const DoctorsMainPage = () => {
-  return (
+  return ( 
     <div className="min-h-screen">
       {/* Hero Section */}
       <div className="bg-linear-to-b from-primary/5 to-transparent py-20">

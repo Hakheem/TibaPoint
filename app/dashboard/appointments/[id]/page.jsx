@@ -15,7 +15,7 @@ import {
   ArrowLeft,
   Video,
   CheckCircle,
-  XCircle,
+  XCircle, 
   AlertCircle
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -118,7 +118,7 @@ const AppointmentDetailPage = async ({ params }) => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white text-2xl font-semibold">
+                <div className="h-16 w-16 rounded-full bg-linear-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white text-2xl font-semibold">
                   {appointment.patient.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1">
