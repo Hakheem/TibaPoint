@@ -74,31 +74,27 @@ export default function ForDoctors() {
         <div className="absolute bottom-1/4 -right-48 w-96 h-96 bg-blue-200/20 dark:bg-blue-500/5 rounded-full blur-3xl" />
       </div>
 
+      <div className="text-center mx-auto max-w-2xl md:max-w-3xl lg:max-w-4xl space-y-3 mb-8 ">
+        {/* Badge */}
+        <div className="text-center justify-center">
+          <Badge className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-xs sm:text-sm font-medium text-primary dark:bg-teal-500/20 dark:text-teal-300">
+            For Healthcare Providers
+          </Badge>
+        </div>
 
-<div className='text-center mx-auto max-w-2xl md:max-w-3xl lg:max-w-4xl space-y-3 mb-8 '>
-
-  {/* Badge */}
-  <div className="text-center justify-center">
-    <Badge className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-xs sm:text-sm font-medium text-primary dark:bg-teal-500/20 dark:text-teal-300">
-      For Healthcare Providers
-    </Badge>
-  </div>
-
-  {/* Title */}
-  <div className="text-center">
-    <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-      Your Leading{" "}
-      <span className="text-gradient-primary">
-        Healthcare Platform
-      </span>
-    </h2>
-    <p className="text-base  text-muted-foreground mx-auto max-w-2xl md:max-w-3xl">
-      Join thousands of medical professionals who are enhancing
-      patient care while optimizing their practice management with our
-      purpose-built healthcare platform.
-    </p>
-  </div>
-</div>
+        {/* Title */}
+        <div className="text-center">
+          <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+            Your Leading{" "}
+            <span className="text-gradient-primary">Healthcare Platform</span>
+          </h2>
+          <p className="text-base  text-muted-foreground mx-auto max-w-2xl md:max-w-3xl">
+            Join thousands of medical professionals who are enhancing patient
+            care while optimizing their practice management with our
+            purpose-built healthcare platform.
+          </p>
+        </div>
+      </div>
 
       <div className="container padded mx-auto relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -135,16 +131,16 @@ export default function ForDoctors() {
               <p className="text-sm text-muted-foreground">Commission</p>
             </div>
 
-              {/* CTA Button */}
-        <div className="text-center absolute -bottom-6 -left-6">
-          <Button
-            size="lg"
-            className="inline-flex items-center justify-center gap-2 py-6 bg-gradient-primary font-medium duration-300 "
-          >
-            Get Verified & Start Seeing Patients
-            <ArrowRight className="h-5 w-5" />
-          </Button>
-        </div>
+            {/* CTA Button */}
+            <div className="text-center absolute -bottom-6 -left-6">
+              <Button
+                size="lg"
+                className="inline-flex items-center justify-center gap-2 py-6 bg-gradient-primary font-medium duration-300 "
+              >
+                Get Verified & Start Seeing Patients
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+            </div>
 
             {/* Glow effect */}
             <div className="absolute -inset-8 bg-linear-to-br from-teal-500/20 to-blue-500/20 rounded-3xl blur-3xl -z-10 opacity-50" />
@@ -152,8 +148,6 @@ export default function ForDoctors() {
 
           {/* Right */}
           <div className="space-y-6 order-1 lg:order-2">
-          
-
             {/* Mobile: Grid layout (phones) */}
             <div className="block md:hidden">
               <div className="grid grid-cols-2 gap-4">
@@ -164,7 +158,7 @@ export default function ForDoctors() {
                   >
                     {/* Icon Container - Hidden on phones */}
                     <div
-                      className={`${benefit.bgColor} h-10 w-10 rounded-lg hidden sm:flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
+                      className={`${benefit.bgColor} h-10 w-10 rounded-lg hidden sm:flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300`}
                     >
                       <div className={benefit.color}>{benefit.icon}</div>
                     </div>
@@ -192,7 +186,7 @@ export default function ForDoctors() {
                       <div className="group flex gap-3 p-6 rounded-xl bg-card border border-border hover:border-primary/20 dark:hover:border-teal-500/30 hover:shadow-md transition-all duration-300 h-full">
                         {/* Icon Container */}
                         <div
-                          className={`${benefit.bgColor} h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
+                          className={`${benefit.bgColor} h-10 w-10 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300`}
                         >
                           <div className={benefit.color}>{benefit.icon}</div>
                         </div>
@@ -233,7 +227,7 @@ export default function ForDoctors() {
                   >
                     {/* Icon Container */}
                     <div
-                      className={`${benefit.bgColor} h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform duration-300`}
+                      className={`${benefit.bgColor} h-10 w-10 rounded-lg flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform duration-300`}
                     >
                       <div className={benefit.color}>{benefit.icon}</div>
                     </div>
@@ -253,8 +247,6 @@ export default function ForDoctors() {
             </div>
           </div>
         </div>
-
-      
       </div>
 
       <style jsx>{`

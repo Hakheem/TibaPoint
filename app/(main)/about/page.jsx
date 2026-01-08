@@ -1,5 +1,5 @@
 import React from 'react'
-import Features from "./_components/Features";
+import Features from '../_components/Features'
 
 
 const page = () => {

@@ -124,9 +124,7 @@ export async function submitReview(appointmentId, rating, comment, isPublic = tr
   }
 }
 
-*
- * Get reviews for a specific doctor (public view)
- */
+
 export async function getDoctorReviews(doctorId, limit = 10, page = 1) {
   try {
     const skip = (page - 1) * limit;

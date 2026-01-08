@@ -1,6 +1,6 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -8,43 +8,51 @@ import {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-} from '@/components/ui/dialog'
-import { Button } from '@/components/ui/button'
-import { Label } from '@/components/ui/label'
-import { Badge } from '@/components/ui/badge'
-import { CalendarIcon, MapPin, Phone, FileText, User, Award, Shield } from 'lucide-react'
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import {
+  CalendarIcon,
+  MapPin,
+  Phone,
+  FileText,
+  User,
+  Award,
+  Shield,
+} from "lucide-react";
 
-const VerificationModal = ({ 
-  isOpen, 
-  onClose, 
-  doctor, 
-  onConfirm, 
-  isVerifying 
+const VerificationModal = ({
+  isOpen,
+  onClose,
+  doctor,
+  onConfirm,
+  isVerifying,
 }) => {
-  const [notes, setNotes] = useState('')
+  const [notes, setNotes] = useState("");
 
   // Reset notes when modal opens
   useEffect(() => {
     if (isOpen) {
-      setNotes('')
+      setNotes("");
     }
-  }, [isOpen])
+  }, [isOpen]);
 
   const handleConfirm = () => {
-    onConfirm(notes)
-    setNotes('') // Clear notes after confirmation
-  }
+    onConfirm(notes);
+    setNotes(""); // Clear notes after confirmation
+  };
 
   const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -63,7 +71,7 @@ const VerificationModal = ({
           {/* Doctor Basic Info */}
           <div className="bg-gray-50 p-4 rounded-lg">
             <div className="flex items-start gap-4">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                 {doctor.imageUrl ? (
                   <img
                     src={doctor.imageUrl}
@@ -103,14 +111,22 @@ const VerificationModal = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* License Number */}
               <div className="bg-white border rounded-lg p-4">
-                <Label className="text-sm text-gray-500">Medical License Number</Label>
-                <p className="font-medium mt-1 font-mono">{doctor.licenseNumber || 'Not provided'}</p>
+                <Label className="text-sm text-gray-500">
+                  Medical License Number
+                </Label>
+                <p className="font-medium mt-1 font-mono">
+                  {doctor.licenseNumber || "Not provided"}
+                </p>
               </div>
 
               {/* Experience */}
               <div className="bg-white border rounded-lg p-4">
-                <Label className="text-sm text-gray-500">Years of Experience</Label>
-                <p className="font-medium mt-1">{doctor.experience || '0'} years</p>
+                <Label className="text-sm text-gray-500">
+                  Years of Experience
+                </Label>
+                <p className="font-medium mt-1">
+                  {doctor.experience || "0"} years
+                </p>
               </div>
 
               {/* Phone */}
@@ -141,7 +157,9 @@ const VerificationModal = ({
                   <CalendarIcon className="h-3 w-3" />
                   Application Date
                 </Label>
-                <p className="font-medium mt-1">{formatDate(doctor.createdAt)}</p>
+                <p className="font-medium mt-1">
+                  {formatDate(doctor.createdAt)}
+                </p>
               </div>
             </div>
           </div>
@@ -154,7 +172,9 @@ const VerificationModal = ({
                 Professional Bio
               </Label>
               <div className="bg-white border rounded-lg p-4">
-                <p className="text-gray-700 whitespace-pre-wrap">{doctor.bio}</p>
+                <p className="text-gray-700 whitespace-pre-wrap">
+                  {doctor.bio}
+                </p>
               </div>
             </div>
           )}
@@ -191,17 +211,14 @@ const VerificationModal = ({
               className="w-full h-24 p-3 border rounded-lg resize-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
             />
             <p className="text-xs text-gray-500">
-              These notes will be included in the verification notification sent to the doctor.
+              These notes will be included in the verification notification sent
+              to the doctor.
             </p>
           </div>
         </div>
 
         <DialogFooter className="flex gap-2 sm:gap-0">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isVerifying}
-          >
+          <Button variant="outline" onClick={onClose} disabled={isVerifying}>
             Cancel
           </Button>
           <Button
@@ -224,8 +241,7 @@ const VerificationModal = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
-export default VerificationModal
-
+export default VerificationModal;

@@ -1,122 +1,133 @@
 // app/dashboard/earnings/page.jsx
-"use client"
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
-import { 
-  DollarSign, 
-  TrendingUp, 
-  Calendar, 
-  CreditCard, 
+import { useState, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  DollarSign,
+  TrendingUp,
+  Calendar,
+  CreditCard,
   Download,
   Users,
   BarChart3,
   ArrowUpRight,
   Clock,
   CheckCircle,
-  AlertCircle
-} from 'lucide-react'
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { format } from 'date-fns'
-import { DateRangePicker } from '@/components/ui/date-range-picker'
-import { 
-  LineChart, 
-  Line, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+  AlertCircle,
+} from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { format } from "date-fns";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   BarChart,
-  Bar
-} from 'recharts'
+  Bar,
+} from "recharts";
 
-import { getDoctorEarnings, getEarningsStatistics, requestWithdrawal } from '@/actions/earnings'
+import {
+  getDoctorEarnings,
+  getEarningsStatistics,
+  requestWithdrawal,
+} from "@/actions/earnings";
 
 export default function DoctorEarningsPage() {
-  const [dateRange, setDateRange] = useState()
+  const [dateRange, setDateRange] = useState();
   const [earnings, setEarnings] = useState({
     totalEarnings: 0,
     pendingEarnings: 0,
     totalPlatformEarnings: 0,
     totalConsultations: 0,
     recentAppointments: [],
-    allAppointments: []
-  })
+    allAppointments: [],
+  });
   const [monthlyStats, setMonthlyStats] = useState({
-    period: 'month',
+    period: "month",
     totalEarnings: 0,
     totalConsultations: 0,
     avgEarningsPerConsultation: 0,
     chartData: [],
-    appointments: []
-  })
-  const [loading, setLoading] = useState(true)
-  const [withdrawalAmount, setWithdrawalAmount] = useState('')
-  const [processing, setProcessing] = useState(false)
+    appointments: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [withdrawalAmount, setWithdrawalAmount] = useState("");
+  const [processing, setProcessing] = useState(false);
 
   // Load data on mount and when dateRange changes
   useEffect(() => {
-    loadData()
-  }, [dateRange])
+    loadData();
+  }, [dateRange]);
 
   async function loadData() {
     try {
-      setLoading(true)
-      
-      const filters = {}
+      setLoading(true);
+
+      const filters = {};
       if (dateRange?.from) {
-        filters.startDate = dateRange.from.toISOString()
+        filters.startDate = dateRange.from.toISOString();
       }
       if (dateRange?.to) {
-        filters.endDate = dateRange.to.toISOString()
+        filters.endDate = dateRange.to.toISOString();
       }
 
       const [earningsResult, monthlyStatsResult] = await Promise.all([
         getDoctorEarnings(filters),
-        getEarningsStatistics('month')
-      ])
+        getEarningsStatistics("month"),
+      ]);
 
       if (earningsResult.success) {
-        setEarnings(earningsResult.earnings)
+        setEarnings(earningsResult.earnings);
       }
 
       if (monthlyStatsResult.success) {
-        setMonthlyStats(monthlyStatsResult.statistics)
+        setMonthlyStats(monthlyStatsResult.statistics);
       }
     } catch (error) {
-      console.error('Failed to fetch earnings:', error)
+      console.error("Failed to fetch earnings:", error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
   const handleWithdrawalRequest = async () => {
     try {
-      setProcessing(true)
-      const amount = parseFloat(withdrawalAmount || 0)
-      const result = await requestWithdrawal(amount)
-      
+      setProcessing(true);
+      const amount = parseFloat(withdrawalAmount || 0);
+      const result = await requestWithdrawal(amount);
+
       if (result.success) {
-        alert(result.message)
-        await loadData() // Refresh data
-        setWithdrawalAmount('')
+        alert(result.message);
+        await loadData(); // Refresh data
+        setWithdrawalAmount("");
       } else {
-        alert(`Error: ${result.error}`)
+        alert(`Error: ${result.error}`);
       }
     } catch (error) {
-      console.error('Failed to request withdrawal:', error)
-      alert('Failed to submit withdrawal request')
+      console.error("Failed to request withdrawal:", error);
+      alert("Failed to submit withdrawal request");
     } finally {
-      setProcessing(false)
+      setProcessing(false);
     }
-  }
+  };
 
   const handleExportReport = () => {
-    alert('Export feature would be implemented here')
-  }
+    alert("Export feature would be implemented here");
+  };
 
   if (loading) {
     return (
@@ -126,14 +137,14 @@ export default function DoctorEarningsPage() {
           <p className="mt-4 text-muted-foreground">Loading earnings data...</p>
         </div>
       </div>
-    )
+    );
   }
 
-  const weeklyAverage = monthlyStats.totalEarnings / 4
-  const dailyAverage = monthlyStats.totalEarnings / 30
+  const weeklyAverage = monthlyStats.totalEarnings / 4;
+  const dailyAverage = monthlyStats.totalEarnings / 30;
 
   return (
-    <div className="space-y-6 "> 
+    <div className="space-y-6 ">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
@@ -144,14 +155,14 @@ export default function DoctorEarningsPage() {
         </div>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <div className="w-full sm:w-64">
-            <DateRangePicker 
+            <DateRangePicker
               dateRange={dateRange}
               onDateRangeChange={setDateRange}
             />
           </div>
           {dateRange && (
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               size="sm"
               onClick={() => setDateRange(undefined)}
             >
@@ -167,7 +178,9 @@ export default function DoctorEarningsPage() {
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Earnings</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Earnings
+                </p>
                 <p className="text-2xl md:text-3xl font-bold mt-2">
                   KSh {earnings.totalEarnings.toLocaleString()}
                 </p>
@@ -187,7 +200,9 @@ export default function DoctorEarningsPage() {
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Available Balance</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Available Balance
+                </p>
                 <p className="text-2xl md:text-3xl font-bold mt-2">
                   KSh {earnings.pendingEarnings.toLocaleString()}
                 </p>
@@ -207,7 +222,9 @@ export default function DoctorEarningsPage() {
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Pending Earnings</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Pending Earnings
+                </p>
                 <p className="text-2xl md:text-3xl font-bold mt-2">
                   KSh {earnings.pendingEarnings.toLocaleString()}
                 </p>
@@ -227,7 +244,9 @@ export default function DoctorEarningsPage() {
           <CardContent className="p-4 md:p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Total Consultations</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  Total Consultations
+                </p>
                 <p className="text-2xl md:text-3xl font-bold mt-2">
                   {earnings.totalConsultations}
                 </p>
@@ -271,28 +290,35 @@ export default function DoctorEarningsPage() {
           <Card>
             <CardHeader>
               <CardTitle>Earnings Trend</CardTitle>
-              <CardDescription>Monthly earnings from completed consultations</CardDescription>
+              <CardDescription>
+                Monthly earnings from completed consultations
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-64 md:h-80">
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={monthlyStats.chartData}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="date" 
-                      tickFormatter={(date) => format(new Date(date), 'MMM d')}
+                    <XAxis
+                      dataKey="date"
+                      tickFormatter={(date) => format(new Date(date), "MMM d")}
                     />
-                    <YAxis 
+                    <YAxis
                       tickFormatter={(value) => `KSh ${value.toLocaleString()}`}
                     />
-                    <Tooltip 
-                      formatter={(value) => [`KSh ${value.toLocaleString()}`, 'Earnings']}
-                      labelFormatter={(label) => format(new Date(label), 'MMM d, yyyy')}
+                    <Tooltip
+                      formatter={(value) => [
+                        `KSh ${value.toLocaleString()}`,
+                        "Earnings",
+                      ]}
+                      labelFormatter={(label) =>
+                        format(new Date(label), "MMM d, yyyy")
+                      }
                     />
-                    <Line 
-                      type="monotone" 
-                      dataKey="earnings" 
-                      stroke="#3b82f6" 
+                    <Line
+                      type="monotone"
+                      dataKey="earnings"
+                      stroke="#3b82f6"
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
@@ -308,7 +334,9 @@ export default function DoctorEarningsPage() {
             <Card>
               <CardHeader>
                 <CardTitle>Recent Earnings</CardTitle>
-                <CardDescription>Latest completed consultations</CardDescription>
+                <CardDescription>
+                  Latest completed consultations
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4 max-h-[400px] overflow-y-auto">
@@ -319,21 +347,27 @@ export default function DoctorEarningsPage() {
                         className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white font-semibold">
-                            {appointment.patient?.name?.charAt(0) || 'P'}
+                          <div className="h-10 w-10 rounded-full bg-linear-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white font-semibold">
+                            {appointment.patient?.name?.charAt(0) || "P"}
                           </div>
                           <div>
                             <p className="font-medium text-sm">
-                              {appointment.patient?.name || 'Patient'}
+                              {appointment.patient?.name || "Patient"}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {format(new Date(appointment.completedAt), 'MMM d, h:mm a')}
+                              {format(
+                                new Date(appointment.completedAt),
+                                "MMM d, h:mm a"
+                              )}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
                           <p className="font-semibold text-green-600">
-                            KSh {Math.round(appointment.doctorEarnings || 0).toLocaleString()}
+                            KSh{" "}
+                            {Math.round(
+                              appointment.doctorEarnings || 0
+                            ).toLocaleString()}
                           </p>
                           <p className="text-xs text-muted-foreground">
                             30-min consultation
@@ -344,7 +378,9 @@ export default function DoctorEarningsPage() {
                   ) : (
                     <div className="text-center py-8">
                       <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                      <p className="text-muted-foreground">No recent earnings</p>
+                      <p className="text-muted-foreground">
+                        No recent earnings
+                      </p>
                     </div>
                   )}
                 </div>
@@ -365,23 +401,36 @@ export default function DoctorEarningsPage() {
                 <div className="space-y-6">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Monthly Earnings</p>
+                      <p className="text-sm text-muted-foreground">
+                        Monthly Earnings
+                      </p>
                       <p className="text-2xl font-bold">
                         KSh {monthlyStats.totalEarnings.toLocaleString()}
                       </p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Monthly Consultations</p>
-                      <p className="text-2xl font-bold">{monthlyStats.totalConsultations}</p>
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Average per Consultation</p>
+                      <p className="text-sm text-muted-foreground">
+                        Monthly Consultations
+                      </p>
                       <p className="text-2xl font-bold">
-                        KSh {Math.round(monthlyStats.avgEarningsPerConsultation).toLocaleString()}
+                        {monthlyStats.totalConsultations}
                       </p>
                     </div>
                     <div className="space-y-1">
-                      <p className="text-sm text-muted-foreground">Weekly Average</p>
+                      <p className="text-sm text-muted-foreground">
+                        Average per Consultation
+                      </p>
+                      <p className="text-2xl font-bold">
+                        KSh{" "}
+                        {Math.round(
+                          monthlyStats.avgEarningsPerConsultation
+                        ).toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">
+                        Weekly Average
+                      </p>
                       <p className="text-2xl font-bold">
                         KSh {Math.round(weeklyAverage).toLocaleString()}
                       </p>
@@ -390,18 +439,24 @@ export default function DoctorEarningsPage() {
 
                   <div className="pt-4 border-t">
                     <div className="flex items-center justify-between mb-4">
-                      <p className="text-sm font-medium">Consultation Distribution</p>
+                      <p className="text-sm font-medium">
+                        Consultation Distribution
+                      </p>
                       <Badge variant="outline">This Month</Badge>
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-sm">
-                        <span className="text-muted-foreground">Video Consultations</span>
-                        <span className="font-medium">{monthlyStats.totalConsultations}</span>
+                        <span className="text-muted-foreground">
+                          Video Consultations
+                        </span>
+                        <span className="font-medium">
+                          {monthlyStats.totalConsultations}
+                        </span>
                       </div>
                       <div className="w-full bg-muted rounded-full h-2">
-                        <div 
-                          className="bg-blue-500 h-2 rounded-full" 
-                          style={{ width: '100%' }}
+                        <div
+                          className="bg-blue-500 h-2 rounded-full"
+                          style={{ width: "100%" }}
                         />
                       </div>
                     </div>
@@ -411,13 +466,17 @@ export default function DoctorEarningsPage() {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium">Next Payout</p>
-                        <p className="text-xs text-muted-foreground">Every Monday</p>
+                        <p className="text-xs text-muted-foreground">
+                          Every Monday
+                        </p>
                       </div>
                       <div className="text-right">
                         <p className="text-lg font-semibold text-green-600">
                           KSh {earnings.pendingEarnings.toLocaleString()}
                         </p>
-                        <p className="text-xs text-muted-foreground">Pending earnings</p>
+                        <p className="text-xs text-muted-foreground">
+                          Pending earnings
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -434,16 +493,18 @@ export default function DoctorEarningsPage() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <CardTitle>Transaction History</CardTitle>
-                  <CardDescription>Detailed record of all your earnings</CardDescription>
+                  <CardDescription>
+                    Detailed record of all your earnings
+                  </CardDescription>
                 </div>
                 <div className="flex items-center gap-2">
-                  <DateRangePicker 
+                  <DateRangePicker
                     dateRange={dateRange}
                     onDateRangeChange={setDateRange}
                     className="w-full md:w-64"
                   />
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => setDateRange(undefined)}
                   >
@@ -457,33 +518,58 @@ export default function DoctorEarningsPage() {
                 <table className="w-full min-w-[800px]">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Date & Time</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Patient</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Type</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Duration</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Platform Fee</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Earnings</th>
-                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">Status</th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Date & Time
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Patient
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Type
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Duration
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Platform Fee
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Earnings
+                      </th>
+                      <th className="text-left py-3 px-4 text-sm font-medium text-muted-foreground">
+                        Status
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {earnings.allAppointments.length > 0 ? (
                       earnings.allAppointments.map((appointment) => (
-                        <tr key={appointment.id} className="border-b hover:bg-muted/50">
+                        <tr
+                          key={appointment.id}
+                          className="border-b hover:bg-muted/50"
+                        >
                           <td className="py-3 px-4">
                             <div className="text-sm">
-                              {format(new Date(appointment.completedAt), 'MMM d, yyyy')}
+                              {format(
+                                new Date(appointment.completedAt),
+                                "MMM d, yyyy"
+                              )}
                             </div>
                             <div className="text-xs text-muted-foreground">
-                              {format(new Date(appointment.completedAt), 'h:mm a')}
+                              {format(
+                                new Date(appointment.completedAt),
+                                "h:mm a"
+                              )}
                             </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="flex items-center gap-2">
-                              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white text-xs">
-                                {appointment.patient?.name?.charAt(0) || 'P'}
+                              <div className="h-8 w-8 rounded-full bg-linear-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white text-xs">
+                                {appointment.patient?.name?.charAt(0) || "P"}
                               </div>
-                              <span className="text-sm">{appointment.patient?.name || 'Patient'}</span>
+                              <span className="text-sm">
+                                {appointment.patient?.name || "Patient"}
+                              </span>
                             </div>
                           </td>
                           <td className="py-3 px-4">
@@ -493,11 +579,17 @@ export default function DoctorEarningsPage() {
                           </td>
                           <td className="py-3 px-4 text-sm">30 mins</td>
                           <td className="py-3 px-4 text-sm text-muted-foreground">
-                            KSh {Math.round(appointment.platformEarnings || 0).toLocaleString()}
+                            KSh{" "}
+                            {Math.round(
+                              appointment.platformEarnings || 0
+                            ).toLocaleString()}
                           </td>
                           <td className="py-3 px-4">
                             <div className="font-medium text-green-600">
-                              KSh {Math.round(appointment.doctorEarnings || 0).toLocaleString()}
+                              KSh{" "}
+                              {Math.round(
+                                appointment.doctorEarnings || 0
+                              ).toLocaleString()}
                             </div>
                           </td>
                           <td className="py-3 px-4">
@@ -512,7 +604,9 @@ export default function DoctorEarningsPage() {
                       <tr>
                         <td colSpan="7" className="py-12 text-center">
                           <DollarSign className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-                          <p className="text-muted-foreground">No transactions found</p>
+                          <p className="text-muted-foreground">
+                            No transactions found
+                          </p>
                         </td>
                       </tr>
                     )}
@@ -522,11 +616,16 @@ export default function DoctorEarningsPage() {
             </CardContent>
             <CardFooter className="flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="text-sm text-muted-foreground">
-                Showing {Math.min(earnings.allAppointments.length, 10)} of {earnings.allAppointments.length} transactions
+                Showing {Math.min(earnings.allAppointments.length, 10)} of{" "}
+                {earnings.allAppointments.length} transactions
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" disabled>Previous</Button>
-                <Button variant="outline" size="sm">Next</Button>
+                <Button variant="outline" size="sm" disabled>
+                  Previous
+                </Button>
+                <Button variant="outline" size="sm">
+                  Next
+                </Button>
               </div>
             </CardFooter>
           </Card>
@@ -548,7 +647,9 @@ export default function DoctorEarningsPage() {
                   <Card>
                     <CardContent className="p-4 md:p-6">
                       <div className="text-center">
-                        <p className="text-sm text-muted-foreground">Available Balance</p>
+                        <p className="text-sm text-muted-foreground">
+                          Available Balance
+                        </p>
                         <p className="text-2xl md:text-3xl font-bold mt-2 text-green-600">
                           KSh {earnings.pendingEarnings.toLocaleString()}
                         </p>
@@ -558,11 +659,13 @@ export default function DoctorEarningsPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  
+
                   <Card>
                     <CardContent className="p-4 md:p-6">
                       <div className="text-center">
-                        <p className="text-sm text-muted-foreground">Pending Earnings</p>
+                        <p className="text-sm text-muted-foreground">
+                          Pending Earnings
+                        </p>
                         <p className="text-2xl md:text-3xl font-bold mt-2 text-amber-600">
                           KSh {earnings.pendingEarnings.toLocaleString()}
                         </p>
@@ -572,13 +675,18 @@ export default function DoctorEarningsPage() {
                       </div>
                     </CardContent>
                   </Card>
-                  
+
                   <Card>
                     <CardContent className="p-4 md:p-6">
                       <div className="text-center">
-                        <p className="text-sm text-muted-foreground">Total Withdrawn</p>
+                        <p className="text-sm text-muted-foreground">
+                          Total Withdrawn
+                        </p>
                         <p className="text-2xl md:text-3xl font-bold mt-2">
-                          KSh {(earnings.totalEarnings - earnings.pendingEarnings).toLocaleString()}
+                          KSh{" "}
+                          {(
+                            earnings.totalEarnings - earnings.pendingEarnings
+                          ).toLocaleString()}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
                           All-time total withdrawals
@@ -601,13 +709,17 @@ export default function DoctorEarningsPage() {
                       <div className="p-4 bg-muted/50 rounded-lg">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                           <div>
-                            <p className="font-medium">Available for Withdrawal</p>
+                            <p className="font-medium">
+                              Available for Withdrawal
+                            </p>
                             <p className="text-2xl font-bold text-green-600">
                               KSh {earnings.pendingEarnings.toLocaleString()}
                             </p>
                           </div>
                           <div className="text-right">
-                            <p className="text-sm text-muted-foreground">Minimum Amount</p>
+                            <p className="text-sm text-muted-foreground">
+                              Minimum Amount
+                            </p>
                             <p className="font-medium">KSh 1,000</p>
                           </div>
                         </div>
@@ -626,23 +738,34 @@ export default function DoctorEarningsPage() {
                             placeholder="Enter amount"
                             className="w-full px-3 py-2 border rounded-md"
                             value={withdrawalAmount}
-                            onChange={(e) => setWithdrawalAmount(e.target.value)}
+                            onChange={(e) =>
+                              setWithdrawalAmount(e.target.value)
+                            }
                           />
                         </div>
-                        
+
                         <div>
                           <label className="block text-sm font-medium mb-2">
                             Bank Account Details
                           </label>
                           <div className="p-3 border rounded-md space-y-2">
                             <p className="text-sm">
-                              <span className="text-muted-foreground">Bank:</span> Equity Bank
+                              <span className="text-muted-foreground">
+                                Bank:
+                              </span>{" "}
+                              Equity Bank
                             </p>
                             <p className="text-sm">
-                              <span className="text-muted-foreground">Account:</span> 1234567890
+                              <span className="text-muted-foreground">
+                                Account:
+                              </span>{" "}
+                              1234567890
                             </p>
                             <p className="text-sm">
-                              <span className="text-muted-foreground">Name:</span> Dr. John Doe
+                              <span className="text-muted-foreground">
+                                Name:
+                              </span>{" "}
+                              Dr. John Doe
                             </p>
                           </div>
                         </div>
@@ -653,12 +776,18 @@ export default function DoctorEarningsPage() {
                     <Button variant="outline" className="w-full md:w-auto">
                       Update Bank Details
                     </Button>
-                    <Button 
+                    <Button
                       onClick={handleWithdrawalRequest}
-                      disabled={processing || !withdrawalAmount || parseFloat(withdrawalAmount) < 1000}
+                      disabled={
+                        processing ||
+                        !withdrawalAmount ||
+                        parseFloat(withdrawalAmount) < 1000
+                      }
                       className="w-full md:w-auto"
                     >
-                      {processing ? 'Processing...' : 'Submit Withdrawal Request'}
+                      {processing
+                        ? "Processing..."
+                        : "Submit Withdrawal Request"}
                     </Button>
                   </CardFooter>
                 </Card>
@@ -668,6 +797,5 @@ export default function DoctorEarningsPage() {
         </TabsContent>
       </Tabs>
     </div>
-  )
+  );
 }
-
