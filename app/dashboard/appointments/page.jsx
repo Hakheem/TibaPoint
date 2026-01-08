@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useRouter } from "next/navigation";
 import {
   Calendar,
   Clock,
@@ -17,6 +18,7 @@ import {
   ChevronRight,
   Video,
   AlertCircle,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -42,6 +44,7 @@ import { getDoctorAppointments } from "@/actions/doctors";
 import { completeAppointment } from "@/actions/doctors"; 
 
 const AppointmentsPage = () => {
+  const router = useRouter();
   const [appointments, setAppointments] = useState([]);
   const [filteredAppointments, setFilteredAppointments] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -102,7 +105,13 @@ const AppointmentsPage = () => {
     setIsDetailsOpen(true);
   };
 
-  const handleOpenComplete = (appointment) => {
+  const handleManageAppointment = (appointmentId, e) => {
+    e.stopPropagation(); // Prevent triggering parent click
+    router.push(`/dashboard/appointments/${appointmentId}`);
+  };
+
+  const handleOpenComplete = (appointment, e) => {
+    e.stopPropagation(); // Prevent triggering parent click
     setSelectedAppointment(appointment);
     setCompleteForm({
       notes: appointment.notes || "",
@@ -278,7 +287,7 @@ const AppointmentsPage = () => {
                   className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors gap-4"
                 >
                   <div className="flex items-start gap-4 flex-1">
-                    <div className="h-12 w-12 rounded-full bg-linear-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white font-semibold shrink-0">
+                    <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white font-semibold shrink-0">
                       {appointment.patient.name.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -314,7 +323,19 @@ const AppointmentsPage = () => {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                    {/* Manage Button - Links to detail page with video actions */}
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={(e) => handleManageAppointment(appointment.id, e)}
+                      className="flex-1 sm:flex-initial"
+                    >
+                      <Settings className="h-4 w-4 mr-1" />
+                      Manage
+                    </Button>
+
+                    {/* Quick View Details */}
                     <Button
                       variant="outline"
                       size="sm"
@@ -324,10 +345,13 @@ const AppointmentsPage = () => {
                       View Details
                       <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
+
+                    {/* Quick Complete (from modal) */}
                     {appointment.status !== "COMPLETED" && appointment.status !== "CANCELLED" && (
                       <Button
                         size="sm"
-                        onClick={() => handleOpenComplete(appointment)}
+                        variant="secondary"
+                        onClick={(e) => handleOpenComplete(appointment, e)}
                         className="flex-1 sm:flex-initial"
                       >
                         Complete
@@ -424,6 +448,20 @@ const AppointmentsPage = () => {
                   )}
                 </>
               )}
+
+              {/* Link to full detail page */}
+              <div className="pt-4 border-t">
+                <Button 
+                  onClick={() => {
+                    setIsDetailsOpen(false);
+                    router.push(`/dashboard/appointments/${selectedAppointment.id}`);
+                  }}
+                  className="w-full"
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Manage Appointment (Start Video, Complete, etc.)
+                </Button>
+              </div>
             </div>
           )}
         </DialogContent>

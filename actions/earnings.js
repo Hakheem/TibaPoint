@@ -287,6 +287,7 @@ export async function getPlatformEarnings(filters = {}) {
   }
 }
 
+
 export async function processDoctorPayouts() {
   try {
     const { userId } = await auth();
@@ -322,7 +323,7 @@ export async function processDoctorPayouts() {
     });
 
     const payoutResults = [];
-    const totalPayout = 0;
+    let totalPayout = 0; 
 
     // Calculate pending earnings for each doctor and process payout
     for (const doctor of doctors) {
@@ -339,9 +340,7 @@ export async function processDoctorPayouts() {
           },
         });
 
-        // Create payout record (you'll need a Payout model)
-        // For now, create a notification
-        
+        // Create notification
         await db.notification.create({
           data: {
             userId: doctor.id,
@@ -360,7 +359,7 @@ export async function processDoctorPayouts() {
           status: "PAID",
         });
 
-        totalPayout += pendingEarnings;
+        totalPayout += pendingEarnings; 
       }
     }
 
@@ -375,6 +374,7 @@ export async function processDoctorPayouts() {
     return { success: false, error: "Failed to process payouts" };
   }
 }
+
 
 // ============================================
 // EARNINGS STATISTICS
@@ -492,7 +492,7 @@ export async function getEarningsStatistics(period = "month") {
         totalConsultations,
         avgEarningsPerConsultation: Math.round(avgEarningsPerConsultation),
         chartData,
-        appointments: appointments.slice(0, 10), // Recent appointments
+        appointments: appointments.slice(0, 10), 
       },
     };
   } catch (error) {

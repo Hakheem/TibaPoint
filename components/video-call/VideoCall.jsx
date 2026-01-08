@@ -2,6 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import AgoraRTC from 'agora-rtc-sdk-ng';
+import { Video, VideoOff, Mic, MicOff, PhoneOff, Monitor, MonitorOff } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID;
 
@@ -9,21 +14,26 @@ const VideoCall = ({
   channelName, 
   token, 
   uid, 
-  role = 'host', // 'host' for doctor, 'audience' for patient
+  role, // comes from backend: 'doctor' or 'patient'
   onCallEnd,
-  appointmentId 
+  appointmentId,
+  participantName = 'Participant',
+  participantImage = null
 }) => {
   const [joined, setJoined] = useState(false);
   const [remoteUsers, setRemoteUsers] = useState([]);
-  const [localTracks, setLocalTracks] = useState([]);
+  const [localTracks, setLocalTracks] = useState({ audio: null, video: null });
   const [isAudioMuted, setIsAudioMuted] = useState(false);
   const [isVideoMuted, setIsVideoMuted] = useState(false);
+  const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [callTime, setCallTime] = useState(0);
+  const [connectionState, setConnectionState] = useState('DISCONNECTED');
   
   const client = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoContainer = useRef(null);
   const timerRef = useRef(null);
+  const screenTrack = useRef(null);
 
   // Initialize Agora client
   useEffect(() => {
@@ -37,38 +47,42 @@ const VideoCall = ({
       codec: 'vp8' 
     });
 
-    // Handle user published/unpublished
+    // Connection state changes
+    client.current.on('connection-state-change', (curState) => {
+      setConnectionState(curState);
+    });
+
+    // Handle user published
     client.current.on('user-published', async (user, mediaType) => {
       await client.current.subscribe(user, mediaType);
       
       if (mediaType === 'video') {
-        const remotePlayerContainer = document.createElement('div');
-        remotePlayerContainer.className = 'remote-video';
-        remotePlayerContainer.id = `user-${user.uid}`;
-        remoteVideoContainer.current.appendChild(remotePlayerContainer);
+        setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
         
-        user.videoTrack.play(remotePlayerContainer);
+        // Play remote video
+        setTimeout(() => {
+          const remotePlayerContainer = document.getElementById(`user-${user.uid}`);
+          if (remotePlayerContainer && user.videoTrack) {
+            user.videoTrack.play(remotePlayerContainer);
+          }
+        }, 100);
       }
       
-      if (mediaType === 'audio') {
+      if (mediaType === 'audio' && user.audioTrack) {
         user.audioTrack.play();
       }
     });
 
+    // Handle user unpublished
     client.current.on('user-unpublished', (user, mediaType) => {
       if (mediaType === 'video') {
-        const playerContainer = document.getElementById(`user-${user.uid}`);
-        if (playerContainer) {
-          playerContainer.remove();
-        }
+        setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
       }
     });
 
+    // Handle user left
     client.current.on('user-left', (user) => {
-      const playerContainer = document.getElementById(`user-${user.uid}`);
-      if (playerContainer) {
-        playerContainer.remove();
-      }
+      setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
     });
 
     return () => {
@@ -78,6 +92,13 @@ const VideoCall = ({
     };
   }, []);
 
+  // Auto-join when component mounts
+  useEffect(() => {
+    if (channelName && token && !joined) {
+      joinChannel();
+    }
+  }, [channelName, token]);
+
   // Join channel
   const joinChannel = async () => {
     try {
@@ -86,62 +107,73 @@ const VideoCall = ({
       // Get local tracks
       const [microphoneTrack, cameraTrack] = await Promise.all([
         AgoraRTC.createMicrophoneAudioTrack(),
-        AgoraRTC.createCameraVideoTrack()
+        AgoraRTC.createCameraVideoTrack({
+          encoderConfig: {
+            width: 640,
+            height: 480,
+            frameRate: 30,
+            bitrateMin: 600,
+            bitrateMax: 1000,
+          }
+        })
       ]);
 
-      setLocalTracks([microphoneTrack, cameraTrack]);
+      setLocalTracks({ audio: microphoneTrack, video: cameraTrack });
 
       // Play local video
-      if (localVideoRef.current) {
+      if (localVideoRef.current && cameraTrack) {
         cameraTrack.play(localVideoRef.current);
-      }
-
-      // Set user role
-      if (role === 'audience') {
-        await client.current.setClientRole('audience');
       }
 
       // Join the channel
       await client.current.join(
         appId,
         channelName,
-        token || null,
-        uid || null
+        token,
+        uid
       );
 
-      // Publish local tracks if host
-      if (role === 'host') {
-        await client.current.publish([microphoneTrack, cameraTrack]);
-      }
+      // Publish local tracks
+      await client.current.publish([microphoneTrack, cameraTrack]);
 
       setJoined(true);
       startTimer();
       
-      console.log('Joined channel successfully');
+      console.log('✅ Joined channel successfully');
     } catch (error) {
-      console.error('Failed to join channel:', error);
+      console.error('❌ Failed to join channel:', error);
+      alert(`Failed to join video call: ${error.message}`);
     }
   };
 
   // Leave channel
   const leaveChannel = async () => {
     try {
+      // Stop screen sharing if active
+      if (screenTrack.current) {
+        screenTrack.current.close();
+        screenTrack.current = null;
+        setIsScreenSharing(false);
+      }
+
       // Stop and cleanup local tracks
-      localTracks.forEach(track => {
-        track.stop();
-        track.close();
-      });
+      if (localTracks.audio) {
+        localTracks.audio.stop();
+        localTracks.audio.close();
+      }
+      if (localTracks.video) {
+        localTracks.video.stop();
+        localTracks.video.close();
+      }
 
       // Leave the channel
-      await client.current.leave();
-      
-      // Clear remote videos
-      if (remoteVideoContainer.current) {
-        remoteVideoContainer.current.innerHTML = '';
+      if (client.current) {
+        await client.current.leave();
       }
 
       setJoined(false);
-      setLocalTracks([]);
+      setLocalTracks({ audio: null, video: null });
+      setRemoteUsers([]);
       stopTimer();
       
       if (onCallEnd) {
@@ -153,18 +185,79 @@ const VideoCall = ({
   };
 
   // Toggle audio
-  const toggleAudio = () => {
-    if (localTracks[0]) {
-      localTracks[0].setEnabled(isAudioMuted);
+  const toggleAudio = async () => {
+    if (localTracks.audio) {
+      await localTracks.audio.setEnabled(isAudioMuted);
       setIsAudioMuted(!isAudioMuted);
     }
   };
 
   // Toggle video
-  const toggleVideo = () => {
-    if (localTracks[1]) {
-      localTracks[1].setEnabled(isVideoMuted);
+  const toggleVideo = async () => {
+    if (localTracks.video) {
+      await localTracks.video.setEnabled(isVideoMuted);
       setIsVideoMuted(!isVideoMuted);
+    }
+  };
+
+  // Toggle screen sharing (doctor only)
+  const toggleScreenShare = async () => {
+    try {
+      if (!isScreenSharing) {
+        // Start screen sharing
+        const screenVideoTrack = await AgoraRTC.createScreenVideoTrack({
+          encoderConfig: "1080p_1"
+        });
+
+        // Unpublish camera
+        if (localTracks.video) {
+          await client.current.unpublish([localTracks.video]);
+        }
+
+        // Publish screen
+        await client.current.publish([screenVideoTrack]);
+        screenTrack.current = screenVideoTrack;
+
+        // Play screen in local video container
+        if (localVideoRef.current) {
+          screenVideoTrack.play(localVideoRef.current);
+        }
+
+        setIsScreenSharing(true);
+
+        // Handle screen share stopped
+        screenVideoTrack.on('track-ended', () => {
+          stopScreenShare();
+        });
+      } else {
+        await stopScreenShare();
+      }
+    } catch (error) {
+      console.error('Screen share error:', error);
+      alert('Failed to share screen. Please try again.');
+    }
+  };
+
+  const stopScreenShare = async () => {
+    try {
+      // Stop screen track
+      if (screenTrack.current) {
+        await client.current.unpublish([screenTrack.current]);
+        screenTrack.current.close();
+        screenTrack.current = null;
+      }
+
+      // Republish camera
+      if (localTracks.video) {
+        await client.current.publish([localTracks.video]);
+        if (localVideoRef.current) {
+          localTracks.video.play(localVideoRef.current);
+        }
+      }
+
+      setIsScreenSharing(false);
+    } catch (error) {
+      console.error('Error stopping screen share:', error);
     }
   };
 
@@ -190,284 +283,142 @@ const VideoCall = ({
   };
 
   return (
-    <div className="video-call-container">
-      {/* Call Header */}
-      <div className="call-header">
-        <div className="call-info">
-          <h3>Consultation Room: {channelName}</h3>
-          <p>Duration: {formatTime(callTime)}</p>
-          <p>Role: {role === 'host' ? 'Doctor (Host)' : 'Patient'}</p>
+    <div className="flex flex-col h-full bg-gray-900 rounded-lg overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between p-4 bg-gray-800 border-b border-gray-700">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${
+              connectionState === 'CONNECTED' ? 'bg-green-500' : 
+              connectionState === 'CONNECTING' ? 'bg-yellow-500' : 
+              'bg-red-500'
+            } animate-pulse`} />
+            <span className="text-sm text-gray-300">
+              {connectionState === 'CONNECTED' ? 'Connected' : 
+               connectionState === 'CONNECTING' ? 'Connecting...' : 
+               'Disconnected'}
+            </span>
+          </div>
+          <div className="h-4 w-px bg-gray-600" />
+          <span className="text-white font-mono text-lg">{formatTime(callTime)}</span>
         </div>
         
-        {!joined ? (
-          <button 
-            onClick={joinChannel}
-            className="join-btn"
-            disabled={!channelName}
-          >
-            Join Consultation
-          </button>
-        ) : (
-          <button 
-            onClick={leaveChannel}
-            className="leave-btn"
-          >
-            End Consultation
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-white border-gray-600">
+            {role === 'doctor' ? '👨‍⚕️ Doctor' : '🧑‍💼 Patient'}
+          </Badge>
+        </div>
       </div>
 
       {/* Video Area */}
-      <div className="video-area">
-        {/* Remote Videos */}
-        <div 
-          ref={remoteVideoContainer} 
-          className="remote-videos-container"
-        >
-          {remoteUsers.length === 0 && joined && (
-            <div className="waiting-message">
-              <p>Waiting for {role === 'host' ? 'patient' : 'doctor'} to join...</p>
+      <div className="flex-1 relative p-4">
+        {/* Remote Video */}
+        <div ref={remoteVideoContainer} className="w-full h-full flex items-center justify-center">
+          {remoteUsers.length === 0 ? (
+            <Card className="bg-gray-800 border-gray-700 p-8 text-center">
+              <Avatar className="w-24 h-24 mx-auto mb-4">
+                <AvatarImage src={participantImage} />
+                <AvatarFallback className="text-3xl bg-gradient-to-br from-blue-500 to-teal-500">
+                  {participantName.charAt(0)}
+                </AvatarFallback>
+              </Avatar>
+              <h3 className="text-white text-lg font-semibold mb-2">{participantName}</h3>
+              <p className="text-gray-400">Waiting to join...</p>
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              </div>
+            </Card>
+          ) : (
+            <div className="w-full h-full grid grid-cols-1 gap-4">
+              {remoteUsers.map((user) => (
+                <div key={user.uid} className="relative w-full h-full bg-gray-800 rounded-lg overflow-hidden">
+                  <div id={`user-${user.uid}`} className="w-full h-full" />
+                  <div className="absolute bottom-4 left-4 px-3 py-1 bg-black/60 rounded-full">
+                    <span className="text-white text-sm">{participantName}</span>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Local Video */}
-        <div className="local-video-container">
-          <div ref={localVideoRef} className="local-video"></div>
-          <div className="local-video-info">
-            <span>{role === 'host' ? 'You (Doctor)' : 'You (Patient)'}</span>
-            <span>
-              {isAudioMuted ? '🔇' : '🎤'} 
-              {isVideoMuted ? '📷❌' : '📷'}
-            </span>
+        {/* Local Video (Picture in Picture) */}
+        <div className="absolute bottom-4 right-4 w-64 h-48 bg-gray-800 rounded-lg overflow-hidden border-2 border-blue-500 shadow-xl">
+          <div ref={localVideoRef} className="w-full h-full" />
+          <div className="absolute bottom-2 left-2 px-2 py-1 bg-black/60 rounded-full flex items-center gap-2">
+            <span className="text-white text-sm">You {isScreenSharing ? '(Sharing)' : ''}</span>
+            {isAudioMuted && <MicOff className="w-3 h-3 text-red-400" />}
+            {isVideoMuted && <VideoOff className="w-3 h-3 text-red-400" />}
           </div>
         </div>
       </div>
 
-      {/* Call Controls */}
-      {joined && (
-        <div className="call-controls">
-          <button 
+      {/* Controls */}
+      <div className="p-4 bg-gray-800 border-t border-gray-700">
+        <div className="flex items-center justify-center gap-4">
+          {/* Audio Toggle */}
+          <Button
             onClick={toggleAudio}
-            className={`control-btn ${isAudioMuted ? 'muted' : ''}`}
+            variant={isAudioMuted ? "destructive" : "secondary"}
+            size="lg"
+            className="rounded-full w-14 h-14"
           >
-            {isAudioMuted ? 'Unmute' : 'Mute'}
-          </button>
-          
-          <button 
+            {isAudioMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+          </Button>
+
+          {/* Video Toggle */}
+          <Button
             onClick={toggleVideo}
-            className={`control-btn ${isVideoMuted ? 'muted' : ''}`}
+            variant={isVideoMuted ? "destructive" : "secondary"}
+            size="lg"
+            className="rounded-full w-14 h-14"
           >
-            {isVideoMuted ? 'Start Video' : 'Stop Video'}
-          </button>
-          
-          <button 
+            {isVideoMuted ? <VideoOff className="w-5 h-5" /> : <Video className="w-5 h-5" />}
+          </Button>
+
+          {/* Screen Share (Doctor only) */}
+          {role === 'doctor' && (
+            <Button
+              onClick={toggleScreenShare}
+              variant={isScreenSharing ? "default" : "secondary"}
+              size="lg"
+              className="rounded-full w-14 h-14"
+            >
+              {isScreenSharing ? <MonitorOff className="w-5 h-5" /> : <Monitor className="w-5 h-5" />}
+            </Button>
+          )}
+
+          {/* End Call */}
+          <Button
             onClick={leaveChannel}
-            className="control-btn end-call"
+            variant="destructive"
+            size="lg"
+            className="rounded-full w-14 h-14 bg-red-600 hover:bg-red-700"
           >
-            End Call
-          </button>
+            <PhoneOff className="w-5 h-5" />
+          </Button>
         </div>
-      )}
 
-      {/* Connection Status */}
-      <div className="connection-status">
-        <span className={`status-dot ${joined ? 'connected' : 'disconnected'}`}></span>
-        {joined ? 'Connected' : 'Disconnected'}
+        {/* Control Labels */}
+        <div className="flex items-center justify-center gap-4 mt-3">
+          <span className="text-xs text-gray-400 w-14 text-center">
+            {isAudioMuted ? 'Unmute' : 'Mute'}
+          </span>
+          <span className="text-xs text-gray-400 w-14 text-center">
+            {isVideoMuted ? 'Camera' : 'Camera'}
+          </span>
+          {role === 'doctor' && (
+            <span className="text-xs text-gray-400 w-14 text-center">
+              {isScreenSharing ? 'Stop' : 'Share'}
+            </span>
+          )}
+          <span className="text-xs text-gray-400 w-14 text-center">
+            End
+          </span>
+        </div>
       </div>
-
-      <style jsx>{`
-        .video-call-container {
-          width: 100%;
-          height: 80vh;
-          background: #1a1a1a;
-          border-radius: 12px;
-          overflow: hidden;
-          display: flex;
-          flex-direction: column;
-          color: white;
-        }
-
-        .call-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 16px 24px;
-          background: #2a2a2a;
-          border-bottom: 1px solid #444;
-        }
-
-        .call-info h3 {
-          margin: 0 0 8px 0;
-          font-size: 18px;
-        }
-
-        .call-info p {
-          margin: 4px 0;
-          color: #aaa;
-          font-size: 14px;
-        }
-
-        .join-btn, .leave-btn {
-          padding: 10px 24px;
-          border: none;
-          border-radius: 6px;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.3s;
-        }
-
-        .join-btn {
-          background: #0070f3;
-          color: white;
-        }
-
-        .join-btn:hover:not(:disabled) {
-          background: #0051b3;
-        }
-
-        .join-btn:disabled {
-          background: #555;
-          cursor: not-allowed;
-        }
-
-        .leave-btn {
-          background: #ff4444;
-          color: white;
-        }
-
-        .leave-btn:hover {
-          background: #cc0000;
-        }
-
-        .video-area {
-          flex: 1;
-          display: flex;
-          position: relative;
-          padding: 20px;
-        }
-
-        .remote-videos-container {
-          flex: 1;
-          display: flex;
-          flex-wrap: wrap;
-          gap: 16px;
-          align-content: flex-start;
-        }
-
-        .remote-video {
-          width: 300px;
-          height: 225px;
-          background: #333;
-          border-radius: 8px;
-          overflow: hidden;
-        }
-
-        .waiting-message {
-          width: 100%;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: #888;
-          font-size: 18px;
-        }
-
-        .local-video-container {
-          position: absolute;
-          bottom: 20px;
-          right: 20px;
-          width: 240px;
-          height: 180px;
-          background: #333;
-          border-radius: 8px;
-          overflow: hidden;
-          border: 2px solid #0070f3;
-        }
-
-        .local-video {
-          width: 100%;
-          height: 100%;
-        }
-
-        .local-video-info {
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          right: 0;
-          background: rgba(0, 0, 0, 0.7);
-          padding: 8px;
-          display: flex;
-          justify-content: space-between;
-          font-size: 12px;
-        }
-
-        .call-controls {
-          display: flex;
-          justify-content: center;
-          gap: 16px;
-          padding: 20px;
-          background: #2a2a2a;
-          border-top: 1px solid #444;
-        }
-
-        .control-btn {
-          padding: 12px 24px;
-          border: none;
-          border-radius: 6px;
-          background: #444;
-          color: white;
-          cursor: pointer;
-          transition: all 0.3s;
-          font-weight: 500;
-        }
-
-        .control-btn:hover {
-          background: #555;
-        }
-
-        .control-btn.muted {
-          background: #ff4444;
-        }
-
-        .control-btn.end-call {
-          background: #ff4444;
-        }
-
-        .control-btn.end-call:hover {
-          background: #cc0000;
-        }
-
-        .connection-status {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 12px 24px;
-          background: #2a2a2a;
-          border-top: 1px solid #444;
-          font-size: 14px;
-        }
-
-        .status-dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-        }
-
-        .status-dot.connected {
-          background: #4CAF50;
-          animation: pulse 2s infinite;
-        }
-
-        .status-dot.disconnected {
-          background: #ff4444;
-        }
-
-        @keyframes pulse {
-          0% { opacity: 1; }
-          50% { opacity: 0.5; }
-          100% { opacity: 1; }
-        }
-      `}</style>
     </div>
   );
 };

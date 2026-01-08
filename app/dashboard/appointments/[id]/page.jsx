@@ -23,7 +23,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import AppointmentActions from "./_components/AppointmentActions";
+import DoctorAppointmentActions from "../../_components/DoctorAppointmentActions";
 
 const AppointmentDetailPage = async ({ params }) => {
   const user = await checkUser();
@@ -36,7 +36,7 @@ const AppointmentDetailPage = async ({ params }) => {
     redirect("/");
   }
 
-  const { id } = params;
+  const { id } = await params;
   const result = await getAppointmentById(id);
 
   if (result.error || !result.appointment) {
@@ -83,7 +83,7 @@ const AppointmentDetailPage = async ({ params }) => {
   const canCancel = appointment.status === "SCHEDULED" || appointment.status === "CONFIRMED";
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
+    <div className="space-y-6 ">
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
@@ -93,13 +93,13 @@ const AppointmentDetailPage = async ({ params }) => {
             </Button>
           </Link>
           <div>
-            <h1 className="text-3xl font-bold">Appointment Details</h1>
-            <p className="text-muted-foreground mt-1">
+            <h1 className="text-xl font-bold">Appointment Details</h1>
+            <p className="text-muted-foreground text-sm mt-1">
               {format(new Date(appointment.startTime), "EEEE, MMMM d, yyyy")}
             </p>
           </div>
         </div>
-        <Badge className={`${getStatusColor(appointment.status)} text-base px-4 py-2 flex items-center gap-2`}>
+        <Badge className={`${getStatusColor(appointment.status)} text-sm px-2 py-1 flex items-center gap-2`}>
           {getStatusIcon(appointment.status)}
           {appointment.status}
         </Badge>
@@ -118,7 +118,7 @@ const AppointmentDetailPage = async ({ params }) => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-linear-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white text-2xl font-semibold">
+                <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center text-white text-2xl font-semibold">
                   {appointment.patient.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex-1">
@@ -310,6 +310,14 @@ const AppointmentDetailPage = async ({ params }) => {
             </CardContent>
           </Card>
 
+ {/* Actions - Client Component */}
+          <DoctorAppointmentActions
+            appointment={appointment}
+            canStart={canStart}
+            canComplete={canComplete}
+            canCancel={canCancel}
+          />
+
           {/* Payment Details */}
           <Card>
             <CardHeader>
@@ -340,13 +348,7 @@ const AppointmentDetailPage = async ({ params }) => {
             </CardContent>
           </Card>
 
-          {/* Actions */}
-          <AppointmentActions
-            appointment={appointment}
-            canStart={canStart}
-            canComplete={canComplete}
-            canCancel={canCancel}
-          />
+         
 
           {/* Timestamps */}
           <Card>

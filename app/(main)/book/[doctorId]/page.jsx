@@ -1,4 +1,3 @@
-// app/book/[doctorId]/page.jsx
 import { redirect } from 'next/navigation';
 import { auth } from '@clerk/nextjs/server';
 import { checkUser } from '@/lib/checkUser';

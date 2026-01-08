@@ -1,4 +1,3 @@
-// app/appointments/page.jsx
 import { redirect } from 'next/navigation'
 import { auth } from '@clerk/nextjs/server'
 import { checkUser } from '@/lib/checkUser'
@@ -14,7 +13,7 @@ export const metadata = {
   title: 'My Appointments | MediPass',
   description: 'View and manage your upcoming and past medical appointments.',
 }
-
+ 
 // Status colors configuration
 const statusColors = {
   SCHEDULED: 'bg-blue-100 text-blue-800',
@@ -166,7 +165,7 @@ export default async function AppointmentsPage() {
       : [];
 
     return (
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto padded py-20">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">My Appointments</h1>
@@ -178,11 +177,11 @@ export default async function AppointmentsPage() {
         {/* Tabs for Upcoming/Past */}
         <Tabs defaultValue="upcoming" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="upcoming" className="flex items-center gap-2">
+            <TabsTrigger value="upcoming" className=" cursor-pointer flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Upcoming ({upcomingAppointments.length})
             </TabsTrigger>
-            <TabsTrigger value="past" className="flex items-center gap-2">
+            <TabsTrigger value="past" className="cursor-pointer flex items-center gap-2">
               <CheckCircle className="h-4 w-4" />
               Past ({pastAppointments.length})
             </TabsTrigger>
@@ -242,41 +241,7 @@ export default async function AppointmentsPage() {
           </TabsContent>
         </Tabs>
 
-        {/* Quick Stats */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Total Appointments</p>
-                <p className="text-3xl font-bold mt-2">
-                  {upcomingAppointments.length + pastAppointments.length}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Upcoming</p>
-                <p className="text-3xl font-bold mt-2">
-                  {upcomingAppointments.length}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card>
-            <CardContent className="p-6">
-              <div className="text-center">
-                <p className="text-sm text-muted-foreground">Completed</p>
-                <p className="text-3xl font-bold mt-2">
-                  {pastAppointments.filter(apt => apt.status === 'COMPLETED').length}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+      
       </div>
     )
 
@@ -284,7 +249,7 @@ export default async function AppointmentsPage() {
     console.error('Error fetching appointments:', error)
     
     return (
-      <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="container mx-auto padded py-20">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
           <h2 className="font-bold">Error Loading Appointments</h2>
           <p>There was an error loading your appointments. Please try refreshing the page.</p>

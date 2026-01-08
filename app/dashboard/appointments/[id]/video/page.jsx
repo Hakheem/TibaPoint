@@ -10,7 +10,7 @@ import VideoCall from '@/components/video-call/VideoCall';
 import { generateAgoraToken, getAgoraConfig } from '@/actions/appointments';
 import { toast } from 'sonner';
 
-export default function PatientVideoCallPage() {
+export default function DoctorVideoCallPage() {
   const params = useParams();
   const router = useRouter(); 
   const appointmentId = params?.id;
@@ -71,7 +71,7 @@ export default function PatientVideoCallPage() {
 
   const handleCallEnd = async (duration) => {
     toast.success(`Call ended. Duration: ${Math.floor(duration / 60)} minutes`);
-    router.push(`/appointments/${appointmentId}`);
+    router.push(`/dashboard/appointments/${appointmentId}`);
   };
 
   if (loading) {
@@ -98,13 +98,13 @@ export default function PatientVideoCallPage() {
         <Card className="max-w-md w-full mx-4">
           <CardContent className="py-12 text-center">
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
-            <h3 className="text-xl font-semibold mb-2">Unable to Join Video Call</h3>
+            <h3 className="text-xl font-semibold mb-2">Unable to Start Video Call</h3>
             <Alert variant="destructive" className="mb-6 text-left">
               <AlertDescription>{error}</AlertDescription>
             </Alert>
             <div className="space-y-3">
               <Button 
-                onClick={() => router.push(`/appointments/${appointmentId}`)}
+                onClick={() => router.push(`/dashboard/appointments/${appointmentId}`)}
                 className="w-full"
               >
                 Go Back to Appointment
@@ -133,7 +133,7 @@ export default function PatientVideoCallPage() {
             <p className="text-muted-foreground mb-6">
               Unable to initialize video call. Please contact support if this continues.
             </p>
-            <Button onClick={() => router.push(`/appointments/${appointmentId}`)}>
+            <Button onClick={() => router.push(`/dashboard/appointments/${appointmentId}`)}>
               Go Back
             </Button>
           </CardContent>
@@ -153,7 +153,7 @@ export default function PatientVideoCallPage() {
                 Video Consultation
               </h1>
               <p className="text-gray-400 text-sm">
-                With Dr. {config.counterpart?.name} • {config.counterpart?.speciality || 'Doctor'}
+                With {config.counterpart?.name} • You are the {config.role}
               </p>
             </div>
             <div className="px-3 py-1 bg-green-500/20 rounded-full">
@@ -184,9 +184,9 @@ export default function PatientVideoCallPage() {
           <Alert className="bg-gray-800 border-gray-700">
             <Video className="h-4 w-4 text-gray-400" />
             <AlertDescription className="text-gray-300">
-              <strong>Important:</strong> Ensure you have a stable internet connection. 
-              This consultation is being recorded for quality assurance. 
-              If you experience any technical issues, please contact support immediately.
+              <strong>Doctor Notice:</strong> This consultation is being recorded for quality assurance. 
+              You can share your screen to show medical documents or images to the patient. 
+              Please ensure all medical advice is clearly documented in the appointment notes.
             </AlertDescription>
           </Alert>
         </div>
