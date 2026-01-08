@@ -6,12 +6,9 @@ import { revalidatePath } from 'next/cache';
 import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
 
 
-
-
-// AGORA VIDEO 
 const AGORA_APP_ID = process.env.AGORA_APP_ID;
 const AGORA_APP_CERTIFICATE = process.env.AGORA_APP_CERTIFICATE;
-const AGORA_EXPIRE_TIME = 3600; 
+const AGORA_EXPIRE_TIME = 3600; // 1 hour
 
 export async function generateAgoraToken(appointmentId, userId, role = "doctor") {
   try {
@@ -19,6 +16,18 @@ export async function generateAgoraToken(appointmentId, userId, role = "doctor")
 
     if (!authUserId) {
       return { success: false, error: "Unauthorized" };
+    }
+
+    // Verify Agora credentials exist
+    if (!AGORA_APP_ID || !AGORA_APP_CERTIFICATE) {
+      console.error('❌ Missing Agora credentials:', {
+        AGORA_APP_ID: AGORA_APP_ID ? 'present' : 'MISSING',
+        AGORA_APP_CERTIFICATE: AGORA_APP_CERTIFICATE ? 'present' : 'MISSING',
+      });
+      return { 
+        success: false, 
+        error: "Video service configuration error. Please contact support." 
+      };
     }
 
     // Verify user has access to this appointment
@@ -48,21 +57,25 @@ export async function generateAgoraToken(appointmentId, userId, role = "doctor")
     }
 
     // Check appointment status
-    if (appointment.status !== "CONFIRMED" && appointment.status !== "IN_PROGRESS") {
+    if (appointment.status !== "CONFIRMED" && appointment.status !== "IN_PROGRESS" && appointment.status !== "SCHEDULED") {
       return { success: false, error: "Appointment is not active" };
     }
 
     // Check if appointment time is within valid range
     const now = new Date();
     const startTime = new Date(appointment.startTime);
-    const endTime = appointment.endTime ? new Date(appointment.endTime) : new Date(startTime.getTime() + 90 * 60000); // 90 minutes default
+    const endTime = appointment.endTime ? new Date(appointment.endTime) : new Date(startTime.getTime() + 90 * 60000);
 
     // Allow joining 15 minutes before start time and up to 15 minutes after end time
     const canJoinStart = new Date(startTime.getTime() - 15 * 60000);
     const canJoinEnd = new Date(endTime.getTime() + 15 * 60000);
 
     if (now < canJoinStart) {
-      return { success: false, error: "Appointment has not started yet" };
+      const minutesUntilStart = Math.ceil((canJoinStart - now) / 60000);
+      return { 
+        success: false, 
+        error: `Appointment starts in ${minutesUntilStart} minutes. You can join 15 minutes before the scheduled time.` 
+      };
     }
 
     if (now > canJoinEnd) {
@@ -71,49 +84,58 @@ export async function generateAgoraToken(appointmentId, userId, role = "doctor")
 
     // Generate unique channel name using appointment ID
     const channelName = `appointment_${appointmentId}`;
-    const uid = userId; // Using user ID as Agora UID
     
-    // Determine role (doctor is host, patient is audience)
-    const agoraRole = role === "doctor" ? RtcRole.PUBLISHER : RtcRole.SUBSCRIBER;
+    // Convert userId to number for Agora (must be a number)
+    const agoraUid = parseInt(userId) || Math.floor(Math.random() * 100000);
+    
+    // Both doctor and patient should be publishers for video calls
+    const agoraRole = RtcRole.PUBLISHER;
     
     // Calculate privilege expire time
     const currentTime = Math.floor(Date.now() / 1000);
     const privilegeExpireTime = currentTime + AGORA_EXPIRE_TIME;
     
+    console.log('📹 Generating token with:', {
+      channelName,
+      agoraUid,
+      role: agoraRole,
+      expiresIn: AGORA_EXPIRE_TIME + 's',
+    });
+
     // Generate token
     const token = RtcTokenBuilder.buildTokenWithUid(
       AGORA_APP_ID,
       AGORA_APP_CERTIFICATE,
       channelName,
-      uid,
+      agoraUid,
       agoraRole,
       privilegeExpireTime
     );
 
-    // If this is the first time generating token for this appointment, update the appointment
-    if (!appointment.videoSessionId) {
-      await db.appointment.update({
-        where: { id: appointmentId },
-        data: {
-          videoSessionId: `session_${appointmentId}`,
-          channelName: channelName,
-          agoraUid: parseInt(uid) || 0,
-          videoSessionToken: token,
-        },
-      });
-    }
+    // Update appointment with video session info
+    await db.appointment.update({
+      where: { id: appointmentId },
+      data: {
+        videoSessionId: `session_${appointmentId}`,
+        channelName: channelName,
+        agoraUid: agoraUid,
+        videoSessionToken: token,
+      },
+    });
+
+    console.log('✅ Token generated successfully');
 
     return {
       success: true,
       token,
       channelName,
-      uid,
+      uid: agoraUid,
       appId: AGORA_APP_ID,
       role: agoraRole,
       appointment,
     };
   } catch (error) {
-    console.error("Failed to generate Agora token:", error);
+    console.error("❌ Failed to generate Agora token:", error);
     return { success: false, error: "Failed to generate video token" };
   }
 }
@@ -176,7 +198,7 @@ export async function startVideoSession(appointmentId) {
         type: "APPOINTMENT",
         title: "Consultation Started",
         message: `Dr. ${doctor.name} has started your video consultation. Click to join.`,
-        actionUrl: `/appointments/${appointmentId}/join`,
+        actionUrl: `/appointments/${appointmentId}/video`,
         relatedId: appointmentId,
       },
     });
@@ -318,6 +340,9 @@ export async function getAgoraConfig(appointmentId) {
 
     // Determine user role for this appointment
     const role = user.id === appointment.doctorId ? "doctor" : "patient";
+    
+    // Use user's DB ID as Agora UID
+    const agoraUid = user.id;
 
     return {
       success: true,
@@ -330,7 +355,7 @@ export async function getAgoraConfig(appointmentId) {
         status: appointment.status,
         startTime: appointment.startTime,
         startedAt: appointment.startedAt,
-        agoraUid: appointment.agoraUid || user.id,
+        agoraUid: agoraUid,
       },
     };
   } catch (error) {
@@ -349,7 +374,6 @@ export async function bookAppointmentWithValidation(formData) {
       return { success: false, error: "Unauthorized" };
     }
 
-    // Get patient
     const patient = await db.user.findUnique({
       where: {
         clerkUserId: userId,
@@ -361,7 +385,6 @@ export async function bookAppointmentWithValidation(formData) {
       return { success: false, error: "Patient not found" };
     }
 
-    // Parse form data
     const doctorId = formData.get("doctorId");
     const availabilitySlotId = formData.get("availabilitySlotId");
     const appointmentDate = formData.get("appointmentDate");
@@ -371,7 +394,6 @@ export async function bookAppointmentWithValidation(formData) {
       return { success: false, error: "Missing required fields" };
     }
 
-    // Verify doctor exists and is available
     const doctor = await db.user.findUnique({
       where: {
         id: doctorId,
@@ -389,7 +411,6 @@ export async function bookAppointmentWithValidation(formData) {
       return { success: false, error: "Doctor is currently unavailable for appointments" };
     }
 
-    // Get availability slot
     const availabilitySlot = await db.availability.findUnique({
       where: { id: availabilitySlotId },
     });
@@ -398,29 +419,24 @@ export async function bookAppointmentWithValidation(formData) {
       return { success: false, error: "Invalid availability slot" };
     }
 
-    // Create appointment datetime
     const appointmentDateTime = new Date(appointmentDate);
     const [hours, minutes] = availabilitySlot.startTime.split(':').map(Number);
     appointmentDateTime.setHours(hours, minutes, 0, 0);
 
-    // Check if slot is in the past
     const now = new Date();
     if (appointmentDateTime < now) {
       return { success: false, error: "Cannot book appointment in the past" };
     }
 
-    // Check if slot is within 12 hours (minimum booking notice)
     const twelveHoursFromNow = new Date(now.getTime() + 12 * 60 * 60000);
     if (appointmentDateTime < twelveHoursFromNow) {
       return { success: false, error: "Appointments must be booked at least 12 hours in advance" };
     }
 
-    // Calculate end time (30 minutes after start)
     const endTime = new Date(appointmentDateTime);
     const [endHours, endMinutes] = availabilitySlot.endTime.split(':').map(Number);
     endTime.setHours(endHours, endMinutes, 0, 0);
 
-    // Check if slot is already booked
     const existingAppointment = await db.appointment.findFirst({
       where: {
         doctorId: doctorId,
@@ -435,12 +451,10 @@ export async function bookAppointmentWithValidation(formData) {
       return { success: false, error: "This time slot is already booked. Please choose another slot." };
     }
 
-    // Check patient credits - STILL 2 CREDITS FOR 30-MINUTE CONSULTATION
     if (patient.credits < 2) {
       return { success: false, error: "Insufficient credits. You need 2 credits to book a 30-minute appointment. Please purchase a credit package." };
     }
 
-    // Get patient's active package
     const activePackage = await db.creditPackage.findFirst({
       where: {
         userId: patient.id,
@@ -453,20 +467,17 @@ export async function bookAppointmentWithValidation(formData) {
       },
     });
 
-    let packagePrice = 500; // Default Starter package price
+    let packagePrice = 500;
     
     if (activePackage) {
       packagePrice = activePackage.pricePerConsultation;
     }
 
-    // Calculate earnings split
-    const platformCommission = 0.12; // 12%
+    const platformCommission = 0.12;
     const platformEarnings = packagePrice * platformCommission;
-    const doctorEarnings = packagePrice * (1 - platformCommission); // 88%
+    const doctorEarnings = packagePrice * (1 - platformCommission);
 
-    // Create appointment and update credits in a transaction
     const result = await db.$transaction(async (tx) => {
-      // Create the appointment
       const appointment = await tx.appointment.create({
         data: {
           patientId: patient.id,
@@ -475,7 +486,7 @@ export async function bookAppointmentWithValidation(formData) {
           endTime: endTime,
           status: "SCHEDULED",
           patientDescription: patientDescription || null,
-          creditsCharged: 2, // Still 2 credits for 30-minute consultation
+          creditsCharged: 2,
           packagePrice: packagePrice,
           platformCommission: platformCommission,
           platformEarnings: platformEarnings,
@@ -483,7 +494,6 @@ export async function bookAppointmentWithValidation(formData) {
         },
       });
 
-      // Deduct credits from patient
       await tx.user.update({
         where: { id: patient.id },
         data: {
@@ -493,7 +503,6 @@ export async function bookAppointmentWithValidation(formData) {
         },
       });
 
-      // Update package credits if using a package
       if (activePackage) {
         await tx.creditPackage.update({
           where: { id: activePackage.id },
@@ -507,7 +516,6 @@ export async function bookAppointmentWithValidation(formData) {
           },
         });
 
-        // Create transaction record
         await tx.creditTransaction.create({
           data: {
             userId: patient.id,
@@ -522,7 +530,6 @@ export async function bookAppointmentWithValidation(formData) {
         });
       }
 
-      // Create notification for doctor
       await tx.notification.create({
         data: {
           userId: doctorId,
@@ -534,7 +541,6 @@ export async function bookAppointmentWithValidation(formData) {
         },
       });
 
-      // Create notification for patient
       await tx.notification.create({
         data: {
           userId: patient.id,
@@ -558,7 +564,7 @@ export async function bookAppointmentWithValidation(formData) {
   }
 }
 
-// RESCHEDULING FUNCTIONS (12 HOURS RESTRICTION)
+// RESCHEDULING FUNCTIONS
 
 export async function rescheduleAppointment(appointmentId, newAvailabilitySlotId, newAppointmentDate) {
   try {
@@ -588,17 +594,14 @@ export async function rescheduleAppointment(appointmentId, newAvailabilitySlotId
       return { success: false, error: "Appointment not found" };
     }
 
-    // Check if user is either patient or doctor for this appointment
     if (user.id !== appointment.patientId && user.id !== appointment.doctorId) {
       return { success: false, error: "Access denied" };
     }
 
-    // Check if appointment can be rescheduled (not completed or cancelled)
     if (appointment.status === "COMPLETED" || appointment.status === "CANCELLED") {
       return { success: false, error: "Cannot reschedule a completed or cancelled appointment" };
     }
 
-    // Check 12-hour restriction
     const now = new Date();
     const appointmentTime = new Date(appointment.startTime);
     const hoursUntilAppointment = (appointmentTime - now) / (1000 * 60 * 60);
@@ -607,7 +610,6 @@ export async function rescheduleAppointment(appointmentId, newAvailabilitySlotId
       return { success: false, error: "Cannot reschedule appointment within 12 hours of the scheduled time" };
     }
 
-    // Get new availability slot
     const newAvailabilitySlot = await db.availability.findUnique({
       where: { id: newAvailabilitySlotId },
     });
@@ -616,12 +618,10 @@ export async function rescheduleAppointment(appointmentId, newAvailabilitySlotId
       return { success: false, error: "Invalid availability slot" };
     }
 
-    // Create new appointment datetime
     const newAppointmentDateTime = new Date(newAppointmentDate);
     const [hours, minutes] = newAvailabilitySlot.startTime.split(':').map(Number);
     newAppointmentDateTime.setHours(hours, minutes, 0, 0);
 
-    // Check if new slot is available
     const existingAppointment = await db.appointment.findFirst({
       where: {
         doctorId: appointment.doctorId,
@@ -629,7 +629,7 @@ export async function rescheduleAppointment(appointmentId, newAvailabilitySlotId
         status: {
           in: ["SCHEDULED", "CONFIRMED", "IN_PROGRESS"],
         },
-        id: { not: appointmentId }, // Exclude current appointment
+        id: { not: appointmentId },
       },
     });
 
@@ -637,18 +637,16 @@ export async function rescheduleAppointment(appointmentId, newAvailabilitySlotId
       return { success: false, error: "This time slot is already booked. Please choose another slot." };
     }
 
-    // Calculate new end time
     const newEndTime = new Date(newAppointmentDateTime);
     newEndTime.setHours(newEndTime.getHours() + 1);
 
-    // Update appointment
     const updatedAppointment = await db.appointment.update({
       where: { id: appointmentId },
       data: {
         startTime: newAppointmentDateTime,
         endTime: newEndTime,
-        status: "SCHEDULED", // Reset status to scheduled
-        videoSessionId: null, // Clear previous video session data
+        status: "SCHEDULED",
+        videoSessionId: null,
         videoSessionToken: null,
         channelName: null,
         agoraUid: null,
@@ -658,7 +656,6 @@ export async function rescheduleAppointment(appointmentId, newAvailabilitySlotId
       },
     });
 
-    // Create notifications
     const initiator = user.id === appointment.patientId ? appointment.patient : appointment.doctor;
     const recipient = user.id === appointment.patientId ? appointment.doctor : appointment.patient;
 
@@ -709,12 +706,10 @@ export async function requestReschedule(appointmentId, requestedSlotId, requeste
       return { success: false, error: "Appointment not found" };
     }
 
-    // Check if user is either patient or doctor
     if (user.id !== appointment.patientId && user.id !== appointment.doctorId) {
       return { success: false, error: "Access denied" };
     }
 
-    // Check 12-hour restriction
     const now = new Date();
     const appointmentTime = new Date(appointment.startTime);
     const hoursUntilAppointment = (appointmentTime - now) / (1000 * 60 * 60);
@@ -723,9 +718,6 @@ export async function requestReschedule(appointmentId, requestedSlotId, requeste
       return { success: false, error: "Cannot request rescheduling within 12 hours of the scheduled time" };
     }
 
-    // This would typically create a reschedule request record
-    // For now, we'll create a notification for the other party
-    
     const requester = user.id === appointment.patientId ? appointment.patient : appointment.doctor;
     const requestee = user.id === appointment.patientId ? appointment.doctor : appointment.patient;
 
@@ -753,7 +745,6 @@ export async function checkAppointmentConflict(doctorId, startTime) {
   try {
     const appointmentTime = new Date(startTime);
     
-    // Check for existing appointments at the same time
     const existingAppointment = await db.appointment.findFirst({
       where: {
         doctorId: doctorId,
@@ -856,11 +847,7 @@ export async function getAvailableSlotsForDoctor(doctorId, targetDate) {
   }
 }
 
-// In your appointment.js file, add these:
-
-// ============================================
 // PATIENT APPOINTMENT FUNCTIONS
-// ============================================
 
 export async function getPatientAppointments(filter = "all") {
   try {
@@ -918,7 +905,7 @@ export async function getPatientAppointments(filter = "all") {
       orderBy: {
         startTime: filter === "past" ? "desc" : "asc",
       },
-    });
+    }); 
 
     return { success: true, appointments };
   } catch (error) {
@@ -969,7 +956,7 @@ export async function cancelPatientAppointment(appointmentId, reason) {
       return { success: false, error: "Cannot cancel an appointment that is in progress" };
     }
 
-    // Calculate refund based on cancellation time
+    // Calculate refund based on NEW cancellation time policy
     const now = new Date();
     const appointmentTime = new Date(appointment.startTime);
     const hoursUntilAppointment = (appointmentTime - now) / (1000 * 60 * 60);
@@ -981,12 +968,12 @@ export async function cancelPatientAppointment(appointmentId, reason) {
       // Full refund if cancelled 24+ hours before
       refundCredits = 2;
       refundReason = "UNUSED_PACKAGE";
-    } else if (hoursUntilAppointment >= 2) {
-      // Partial refund if cancelled 2-24 hours before
+    } else if (hoursUntilAppointment >= 12) {
+      // Partial refund if cancelled 12-24 hours before
       refundCredits = 1;
       refundReason = "LATE_CANCELLATION";
     }
-    // No refund if cancelled less than 2 hours before
+    // No refund if cancelled less than 12 hours before
 
     const updated = await db.appointment.update({
       where: { id: appointmentId },
@@ -1010,6 +997,25 @@ export async function cancelPatientAppointment(appointmentId, reason) {
         },
       });
 
+      // Calculate financial split for refund
+      // For full refund: 100% to patient
+      // For partial refund (late cancellation): 50% patient, 25% doctor, 25% platform
+      let patientRefundAmount = 0;
+      let doctorCompensation = 0;
+      let platformFee = 0;
+
+      if (refundCredits === 2) {
+        // Full refund: 100% to patient
+        patientRefundAmount = 2;
+        doctorCompensation = 0;
+        platformFee = 0;
+      } else if (refundCredits === 1) {
+        // Partial refund (50/25/25 split)
+        patientRefundAmount = 1; // 50% of 2 credits
+        doctorCompensation = 0.5; // 25% of 2 credits
+        platformFee = 0.5; // 25% of 2 credits
+      }
+
       // Create refund record
       await db.refund.create({
         data: {
@@ -1020,6 +1026,9 @@ export async function cancelPatientAppointment(appointmentId, reason) {
           originalCredits: 2,
           refundedCredits: refundCredits,
           refundPercentage: (refundCredits / 2) * 100,
+          patientRefundAmount: patientRefundAmount,
+          doctorCompensation: doctorCompensation,
+          platformFee: platformFee,
           status: "COMPLETED",
           processedAt: now,
         },
@@ -1045,8 +1054,9 @@ export async function cancelPatientAppointment(appointmentId, reason) {
         userId: appointment.doctorId,
         type: "APPOINTMENT",
         title: "Appointment Cancelled",
-        message: `${patient.name} has cancelled their appointment. ${reason ? `Reason: ${reason}` : ''}`,
+        message: `${patient.name} has cancelled their appointment. ${reason ? `Reason: ${reason}` : 'No reason provided.'}`,
         actionUrl: `/dashboard/appointments/${appointmentId}`,
+        relatedId: appointmentId,
       },
     });
 

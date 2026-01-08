@@ -133,7 +133,7 @@ export default function DoctorEarningsPage() {
   const dailyAverage = monthlyStats.totalEarnings / 30
 
   return (
-    <div className="space-y-6 ">
+    <div className="space-y-6 "> 
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>

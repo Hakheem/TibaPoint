@@ -1,14 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
-import AgoraRTC from 'agora-rtc-sdk-ng';
 import { Video, VideoOff, Mic, MicOff, PhoneOff, Monitor, MonitorOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-
-const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID;
 
 const VideoCall = ({ 
   channelName, 
@@ -28,48 +25,84 @@ const VideoCall = ({
   const [isScreenSharing, setIsScreenSharing] = useState(false);
   const [callTime, setCallTime] = useState(0);
   const [connectionState, setConnectionState] = useState('DISCONNECTED');
+  const [agoraReady, setAgoraReady] = useState(false);
+  const [error, setError] = useState(null);
   
   const client = useRef(null);
   const localVideoRef = useRef(null);
   const remoteVideoContainer = useRef(null);
   const timerRef = useRef(null);
   const screenTrack = useRef(null);
+  const AgoraRTC = useRef(null);
+
+  const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID;
+
+  // Initialize Agora SDK (client-side only)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const initializeAgora = async () => {
+      try {
+        // Dynamically import Agora SDK
+        const AgoraModule = await import('agora-rtc-sdk-ng');
+        AgoraRTC.current = AgoraModule.default;
+        
+        if (!appId) {
+          setError('Agora App ID is missing. Please check your environment variables.');
+          console.error('NEXT_PUBLIC_AGORA_APP_ID is not set');
+          return;
+        }
+
+        setAgoraReady(true);
+      } catch (err) {
+        console.error('Failed to load Agora SDK:', err);
+        setError('Failed to load video SDK. Please refresh the page.');
+      }
+    };
+
+    initializeAgora();
+  }, [appId]);
 
   // Initialize Agora client
   useEffect(() => {
-    if (!appId) {
-      console.error('Agora App ID is missing');
-      return;
-    }
+    if (!agoraReady || !AgoraRTC.current) return;
 
-    client.current = AgoraRTC.createClient({ 
+    client.current = AgoraRTC.current.createClient({ 
       mode: 'rtc', 
       codec: 'vp8' 
     });
 
     // Connection state changes
     client.current.on('connection-state-change', (curState) => {
+      console.log('Connection state:', curState);
       setConnectionState(curState);
     });
 
     // Handle user published
     client.current.on('user-published', async (user, mediaType) => {
-      await client.current.subscribe(user, mediaType);
-      
-      if (mediaType === 'video') {
-        setRemoteUsers(prev => [...prev.filter(u => u.uid !== user.uid), user]);
+      try {
+        await client.current.subscribe(user, mediaType);
         
-        // Play remote video
-        setTimeout(() => {
-          const remotePlayerContainer = document.getElementById(`user-${user.uid}`);
-          if (remotePlayerContainer && user.videoTrack) {
-            user.videoTrack.play(remotePlayerContainer);
-          }
-        }, 100);
-      }
-      
-      if (mediaType === 'audio' && user.audioTrack) {
-        user.audioTrack.play();
+        if (mediaType === 'video') {
+          setRemoteUsers(prev => {
+            const filtered = prev.filter(u => u.uid !== user.uid);
+            return [...filtered, user];
+          });
+          
+          // Play remote video
+          setTimeout(() => {
+            const remotePlayerContainer = document.getElementById(`user-${user.uid}`);
+            if (remotePlayerContainer && user.videoTrack) {
+              user.videoTrack.play(remotePlayerContainer);
+            }
+          }, 100);
+        }
+        
+        if (mediaType === 'audio' && user.audioTrack) {
+          user.audioTrack.play();
+        }
+      } catch (err) {
+        console.error('Error handling user published:', err);
       }
     });
 
@@ -82,6 +115,7 @@ const VideoCall = ({
 
     // Handle user left
     client.current.on('user-left', (user) => {
+      console.log('User left:', user.uid);
       setRemoteUsers(prev => prev.filter(u => u.uid !== user.uid));
     });
 
@@ -90,24 +124,29 @@ const VideoCall = ({
         leaveChannel();
       }
     };
-  }, []);
+  }, [agoraReady]);
 
-  // Auto-join when component mounts
+  // Auto-join when component mounts and Agora is ready
   useEffect(() => {
-    if (channelName && token && !joined) {
+    if (agoraReady && channelName && token && !joined && client.current) {
       joinChannel();
     }
-  }, [channelName, token]);
+  }, [agoraReady, channelName, token]);
 
   // Join channel
   const joinChannel = async () => {
     try {
-      if (!client.current) return;
+      if (!client.current || !AgoraRTC.current) {
+        setError('Video SDK not initialized');
+        return;
+      }
+
+      console.log('Joining channel:', channelName);
 
       // Get local tracks
       const [microphoneTrack, cameraTrack] = await Promise.all([
-        AgoraRTC.createMicrophoneAudioTrack(),
-        AgoraRTC.createCameraVideoTrack({
+        AgoraRTC.current.createMicrophoneAudioTrack(),
+        AgoraRTC.current.createCameraVideoTrack({
           encoderConfig: {
             width: 640,
             height: 480,
@@ -142,7 +181,7 @@ const VideoCall = ({
       console.log('✅ Joined channel successfully');
     } catch (error) {
       console.error('❌ Failed to join channel:', error);
-      alert(`Failed to join video call: ${error.message}`);
+      setError(`Failed to join video call: ${error.message}`);
     }
   };
 
@@ -202,10 +241,12 @@ const VideoCall = ({
 
   // Toggle screen sharing (doctor only)
   const toggleScreenShare = async () => {
+    if (!AgoraRTC.current) return;
+
     try {
       if (!isScreenSharing) {
         // Start screen sharing
-        const screenVideoTrack = await AgoraRTC.createScreenVideoTrack({
+        const screenVideoTrack = await AgoraRTC.current.createScreenVideoTrack({
           encoderConfig: "1080p_1"
         });
 
@@ -282,6 +323,33 @@ const VideoCall = ({
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
+  // Show loading state
+  if (!agoraReady) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full bg-gray-900 rounded-lg">
+        <div className="text-white text-lg mb-4">Initializing video call...</div>
+        <div className="flex gap-2">
+          <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+          <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+          <div className="w-3 h-3 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-full bg-gray-900 rounded-lg p-8">
+        <div className="text-red-500 text-xl mb-4">⚠️ Error</div>
+        <div className="text-white text-center mb-6">{error}</div>
+        <Button onClick={() => window.location.reload()} variant="default">
+          Reload Page
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col h-full bg-gray-900 rounded-lg overflow-hidden">
       {/* Header */}
@@ -321,7 +389,7 @@ const VideoCall = ({
                 <AvatarFallback className="text-3xl bg-gradient-to-br from-blue-500 to-teal-500">
                   {participantName.charAt(0)}
                 </AvatarFallback>
-              </Avatar>
+              </Avatar> 
               <h3 className="text-white text-lg font-semibold mb-2">{participantName}</h3>
               <p className="text-gray-400">Waiting to join...</p>
               <div className="flex items-center justify-center gap-2 mt-4">

@@ -163,7 +163,7 @@ export default function PatientVideoCallPage() {
               </span>
             </div>
           </div>
-        </div>
+        </div> 
         
         {/* Video Call Component */}
         <div className="h-[calc(100vh-180px)]">

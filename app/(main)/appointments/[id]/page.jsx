@@ -1,22 +1,33 @@
-// app/appointments/[id]/page.jsx - UPDATED VERSION
-import { redirect } from 'next/navigation';
-import { auth } from '@clerk/nextjs/server';
-import { checkUser } from '@/lib/checkUser';
-import { Calendar, Clock, Video, User, MapPin, FileText, Pill, Activity, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { getAppointmentById } from '@/actions/doctors';
+"use client";
 
-export async function generateMetadata({ params }) {
-  return {
-    title: 'Appointment Details | MediPass',
-    description: 'View details of your medical appointment.',
-  };
-} 
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
+import { toast } from "sonner";
+import { 
+  Calendar, 
+  Clock, 
+  Video, 
+  User, 
+  MapPin, 
+  FileText, 
+  Pill, 
+  Activity, 
+  AlertCircle,
+  Star,
+  Loader2,
+  ArrowLeft
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { getAppointmentById } from "@/actions/doctors";
+import { getCurrentUser } from "@/actions/get-current-user";
+import { ReviewDialog } from "./_components/ReviewDialog";
+import { RescheduleDialog } from "./_components/RescheduleDialog";
+import { CancelAppointmentDialog} from "./_components/CancelAppointmentDialog";
 
 // Helper function to check if appointment can be joined
 function canJoinAppointment(appointment) {
@@ -50,20 +61,118 @@ function getTimeUntilAppointment(startTime) {
   }
 }
 
-export default async function AppointmentDetailsPage({ params }) {
-  const { userId } = await auth();
-  
-  if (!userId) {
-    redirect('/sign-in');
+export default function AppointmentDetailsPage() {
+  const params = useParams();
+  const [appointment, setAppointment] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  const appointmentId = params.id;
+
+  useEffect(() => {
+    loadUserAndAppointment();
+  }, [appointmentId]);
+
+  const loadUserAndAppointment = async () => {
+    try {
+      setLoading(true);
+      
+      // Get current user
+      const userResult = await getCurrentUser();
+      if (!userResult.success || !userResult.user) {
+        toast.error("Please sign in to view this appointment");
+        window.location.href = "/sign-in";
+        return;
+      }
+      
+      const user = userResult.user;
+      setCurrentUser(user);
+
+      // Get appointment
+      const result = await getAppointmentById(appointmentId);
+      
+      if (result.success) {
+        const appointmentData = result.appointment;
+        
+        // Verify the user has access to this appointment
+        const hasAccess = 
+          user.id === appointmentData.patientId || 
+          user.id === appointmentData.doctorId || 
+          user.role === "ADMIN";
+        
+        if (!hasAccess) {
+          setError("You don't have permission to view this appointment");
+          toast.error("Access denied");
+          return;
+        }
+        
+        setAppointment(appointmentData);
+      } else {
+        setError(result.error || "Failed to load appointment");
+        toast.error(result.error || "Failed to load appointment");
+      }
+    } catch (error) {
+      console.error("Error loading appointment:", error);
+      setError("Failed to load appointment");
+      toast.error("Failed to load appointment");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Helper to determine if current user is this appointment's patient
+  const isThisAppointmentsPatient = () => {
+    return currentUser && appointment && currentUser.id === appointment.patientId;
+  };
+
+  // Helper to determine if current user is this appointment's doctor
+  const isThisAppointmentsDoctor = () => {
+    return currentUser && appointment && currentUser.id === appointment.doctorId;
+  };
+
+  // Helper to determine if current user is admin
+  const isAdmin = () => {
+    return currentUser && currentUser.role === "ADMIN";
+  };
+
+  const handleReviewSubmitted = (review) => {
+    // Update appointment with review
+    setAppointment(prev => ({
+      ...prev,
+      review
+    }));
+    toast.success("Thank you for your review!");
+  };
+
+  const handleRescheduleComplete = (updatedAppointment) => {
+    // Update appointment with new time
+    setAppointment(updatedAppointment);
+    toast.success("Appointment rescheduled successfully!");
+  };
+
+  const handleCancelComplete = () => {
+    // Update appointment status
+    setAppointment(prev => ({
+      ...prev,
+      status: "CANCELLED"
+    }));
+    toast.success("Appointment cancelled successfully!");
+  };
+
+  if (loading) {
+    return (
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
+            <p className="text-muted-foreground">Loading appointment details...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
-  const currentUser = await checkUser();
-  const resolvedParams = await params;
-  const appointmentId = resolvedParams?.id;
-
-  // Get appointment details
-  const { appointment, error } = await getAppointmentById(appointmentId);
-  
   if (error || !appointment) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -75,17 +184,15 @@ export default async function AppointmentDetailsPage({ params }) {
               {error || 'The appointment you are looking for does not exist or you do not have permission to view it.'}
             </p>
             <Button asChild>
-              <a href="/appointments">View All Appointments</a>
+              <a href="/appointments" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                View All Appointments
+              </a>
             </Button>
           </CardContent>
         </Card>
       </div>
     );
-  }
-
-  // Check if user has access to this appointment
-  if (currentUser?.id !== appointment.patientId && currentUser?.id !== appointment.doctorId && currentUser?.role !== 'ADMIN') {
-    redirect('/appointments');
   }
 
   const statusColors = {
@@ -96,15 +203,17 @@ export default async function AppointmentDetailsPage({ params }) {
     CANCELLED: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
   };
 
-  const isPatient = currentUser?.id === appointment.patientId;
   const canJoin = canJoinAppointment(appointment);
   const timeInfo = getTimeUntilAppointment(appointment.startTime);
 
   return (
-    <div className="container mx-auto padded py-20 ">
+    <div className="container mx-auto padded py-20">
       <div className="mb-8">
         <nav className="flex items-center text-sm text-muted-foreground mb-4">
-          <a href="/appointments" className="hover:text-primary">Appointments</a>
+          <a href="/appointments" className="hover:text-primary flex items-center gap-1">
+            <ArrowLeft className="h-4 w-4" />
+            Appointments
+          </a>
           <span className="mx-2">/</span>
           <span className="text-foreground font-medium">Appointment #{appointment.id.slice(0, 8)}</span>
         </nav>
@@ -123,7 +232,7 @@ export default async function AppointmentDetailsPage({ params }) {
           </div>
           
           {/* Video Join Button - Prominent Display */}
-          {isPatient && (appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED' || appointment.status === 'IN_PROGRESS') && (
+          {isThisAppointmentsPatient() && (appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED' || appointment.status === 'IN_PROGRESS') && (
             <div className="flex flex-col gap-2 md:items-end">
               {canJoin ? (
                 <Button size="lg" asChild className="bg-green-600 hover:bg-green-700">
@@ -143,11 +252,33 @@ export default async function AppointmentDetailsPage({ params }) {
               </p>
             </div>
           )}
+
+          {/* Doctor Actions */}
+          {isThisAppointmentsDoctor() && (appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED') && (
+            <div className="flex flex-col gap-2 md:items-end">
+              {canJoin ? (
+                <Button size="lg" asChild className="bg-green-600 hover:bg-green-700">
+                  <a href={`/dashboard/appointments/${appointment.id}/video`}>
+                    <Video className="h-5 w-5 mr-2" />
+                    Start Consultation
+                  </a>
+                </Button>
+              ) : (
+                <Button size="lg" disabled className="cursor-not-allowed">
+                  <Clock className="h-5 w-5 mr-2" />
+                  Start Consultation Soon
+                </Button>
+              )}
+              <p className={`text-sm font-medium ${timeInfo.color}`}>
+                {timeInfo.message}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Join Call Alert */}
-      {isPatient && (appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED' || appointment.status === 'IN_PROGRESS') && (
+      {/* Join Call Alert for Patient */}
+      {isThisAppointmentsPatient() && (appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED' || appointment.status === 'IN_PROGRESS') && (
         <Alert className={canJoin ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800 mb-6" : "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 mb-6"}>
           <Video className={`h-4 w-4 ${canJoin ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}`} />
           <AlertDescription className={canJoin ? 'text-green-800 dark:text-green-300' : 'text-blue-800 dark:text-blue-300'}>
@@ -164,7 +295,25 @@ export default async function AppointmentDetailsPage({ params }) {
         </Alert>
       )}
 
-      {appointment.status === 'IN_PROGRESS' && isPatient && (
+      {/* Start Call Alert for Doctor */}
+      {isThisAppointmentsDoctor() && (appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED') && (
+        <Alert className={canJoin ? "bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800 mb-6" : "bg-blue-50 border-blue-200 dark:bg-blue-900/20 dark:border-blue-800 mb-6"}>
+          <Video className={`h-4 w-4 ${canJoin ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'}`} />
+          <AlertDescription className={canJoin ? 'text-green-800 dark:text-green-300' : 'text-blue-800 dark:text-blue-300'}>
+            {canJoin ? (
+              <div>
+                <strong>Ready to start!</strong> You can now start the consultation. Click the button above to begin the video call.
+              </div>
+            ) : (
+              <div>
+                <strong>Consultation scheduled.</strong> You can start the video call 15 minutes before the scheduled time.
+              </div>
+            )}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {appointment.status === 'IN_PROGRESS' && isThisAppointmentsPatient() && (
         <Alert className="bg-purple-50 border-purple-200 dark:bg-purple-900/20 dark:border-purple-800 mb-6">
           <AlertCircle className="h-4 w-4 text-purple-600 dark:text-purple-400" />
           <AlertDescription className="text-purple-800 dark:text-purple-300">
@@ -180,34 +329,80 @@ export default async function AppointmentDetailsPage({ params }) {
           <Card>
             <CardHeader>
               <CardTitle>
-                {isPatient ? 'Doctor Information' : 'Patient Information'}
+                {isThisAppointmentsPatient() 
+                  ? 'Doctor Information' 
+                  : isThisAppointmentsDoctor()
+                  ? 'Patient Information'
+                  : isAdmin()
+                  ? 'Appointment Details'
+                  : 'Appointment Information'}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                  <AvatarImage src={isPatient ? appointment.doctor?.imageUrl : appointment.patient?.imageUrl} />
+                  <AvatarImage src={
+                    isThisAppointmentsPatient() || isAdmin()
+                      ? appointment.doctor?.imageUrl 
+                      : appointment.patient?.imageUrl
+                  } />
                   <AvatarFallback className="text-2xl bg-gradient-to-br from-blue-500 to-teal-500 text-white">
-                    {(isPatient ? appointment.doctor?.name : appointment.patient?.name)?.charAt(0)}
+                    {(isThisAppointmentsPatient() || isAdmin()
+                      ? appointment.doctor?.name 
+                      : appointment.patient?.name
+                    )?.charAt(0)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
                   <h3 className="text-xl font-semibold">
-                    {isPatient ? `Dr. ${appointment.doctor?.name}` : appointment.patient?.name}
+                    {isThisAppointmentsPatient() || isAdmin()
+                      ? `Dr. ${appointment.doctor?.name}` 
+                      : appointment.patient?.name}
                   </h3>
                   <p className="text-muted-foreground">
-                    {isPatient ? appointment.doctor?.speciality : 'Patient'}
+                    {isThisAppointmentsPatient() || isAdmin()
+                      ? appointment.doctor?.speciality 
+                      : 'Patient'}
                   </p>
                   
+                  {(isThisAppointmentsPatient() || isAdmin()) && appointment.doctor?.rating && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <div className="flex">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star
+                            key={star}
+                            className={`h-4 w-4 ${
+                              star <= Math.floor(appointment.doctor.rating)
+                                ? "fill-yellow-400 text-yellow-400"
+                                : star <= Math.ceil(appointment.doctor.rating) && !Number.isInteger(appointment.doctor.rating)
+                                ? "fill-yellow-400 text-yellow-400"
+                                : "fill-gray-200 text-gray-200"
+                            }`}
+                          />
+                        ))}
+                      </div>
+                      <span className="text-sm text-muted-foreground">
+                        {appointment.doctor.rating.toFixed(1)} ({appointment.doctor.totalReviews || 0} reviews)
+                      </span>
+                    </div>
+                  )}
+                  
                   <div className="flex flex-wrap gap-4 mt-3">
-                    {isPatient && appointment.doctor?.email && (
+                    {(isThisAppointmentsPatient() || isAdmin()) && appointment.doctor?.email && (
                       <div>
                         <p className="text-sm font-medium">Email</p>
                         <p className="text-sm text-muted-foreground">{appointment.doctor.email}</p>
                       </div>
                     )}
                     
-                    {appointment.doctor?.city && isPatient && (
+                    {isThisAppointmentsDoctor() && appointment.patient?.email && (
+                      <div>
+                        <p className="text-sm font-medium">Email</p>
+                        <p className="text-sm text-muted-foreground">{appointment.patient.email}</p>
+                      </div>
+                    )}
+                    
+                    {(isThisAppointmentsPatient() || isAdmin()) && appointment.doctor?.city && (
                       <div>
                         <p className="text-sm font-medium">Location</p>
                         <div className="flex items-center gap-1">
@@ -316,6 +511,64 @@ export default async function AppointmentDetailsPage({ params }) {
                     <p className="text-muted-foreground bg-green-50 dark:bg-green-900/20 p-4 rounded-lg">{appointment.notes}</p>
                   </div>
                 )}
+
+                {/* Review Section (only for patient) */}
+                {isThisAppointmentsPatient() && (
+                  appointment.review ? (
+                    <div className="border-t pt-6">
+                      <div className="flex items-center justify-between mb-4">
+                        <h4 className="font-semibold flex items-center gap-2">
+                          <Star className="h-5 w-5 text-yellow-500" />
+                          Your Review
+                        </h4>
+                        <Badge variant="outline" className="text-xs">
+                          {new Date(appointment.review.createdAt).toLocaleDateString()}
+                        </Badge>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="flex">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`h-5 w-5 ${
+                                  star <= appointment.review.rating
+                                    ? "fill-yellow-400 text-yellow-400"
+                                    : "fill-gray-200 text-gray-200"
+                                }`}
+                              />
+                            ))}
+                          </div>
+                          <span className="font-medium">{appointment.review.rating}.0</span>
+                        </div>
+                        {appointment.review.comment && (
+                          <p className="text-muted-foreground bg-muted p-3 rounded-lg">
+                            {appointment.review.comment}
+                          </p>
+                        )}
+                        {!appointment.review.isPublic && (
+                          <p className="text-sm text-muted-foreground">
+                            This review is private and only visible to you and the doctor.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="border-t pt-6">
+                      <h4 className="font-semibold mb-4">Share Your Experience</h4>
+                      <ReviewDialog
+                        appointmentId={appointment.id}
+                        trigger={
+                          <Button>
+                            <Star className="h-4 w-4 mr-2" />
+                            Leave a Review
+                          </Button>
+                        }
+                        onReviewSubmitted={handleReviewSubmitted}
+                      />
+                    </div>
+                  )
+                )}
               </CardContent>
             </Card>
           )}
@@ -329,7 +582,8 @@ export default async function AppointmentDetailsPage({ params }) {
               <CardTitle>Actions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {(appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED') && isPatient && (
+              {/* Patient Actions */}
+              {(appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED') && isThisAppointmentsPatient() && (
                 <>
                   {canJoin ? (
                     <Button className="w-full bg-green-600 hover:bg-green-700" size="lg" asChild>
@@ -345,16 +599,47 @@ export default async function AppointmentDetailsPage({ params }) {
                     </Button>
                   )}
                   <Separator />
-                  <Button variant="outline" className="w-full" asChild>
-                    <a href={`/appointments/${appointment.id}/reschedule`}>Reschedule</a>
-                  </Button>
-                  <Button variant="outline" className="w-full text-red-600 hover:text-red-700" asChild>
-                    <a href={`/appointments/${appointment.id}/cancel`}>Cancel Appointment</a>
-                  </Button>
+                  <RescheduleDialog
+                    appointment={appointment}
+                    trigger={
+                      <Button variant="outline" className="w-full">
+                        Reschedule
+                      </Button>
+                    }
+                    onRescheduleComplete={handleRescheduleComplete}
+                  />
+                  <CancelAppointmentDialog
+                    appointment={appointment}
+                    trigger={
+                      <Button variant="outline" className="w-full text-red-600 hover:text-red-700">
+                        Cancel Appointment
+                      </Button>
+                    }
+                    onCancelComplete={handleCancelComplete}
+                  />
                 </>
               )}
               
-              {appointment.status === 'IN_PROGRESS' && isPatient && (
+              {/* Doctor Actions */}
+              {(appointment.status === 'SCHEDULED' || appointment.status === 'CONFIRMED') && isThisAppointmentsDoctor() && (
+                <>
+                  {canJoin ? (
+                    <Button className="w-full bg-green-600 hover:bg-green-700" size="lg" asChild>
+                      <a href={`/dashboard/appointments/${appointment.id}/video`}>
+                        <Video className="h-4 w-4 mr-2" />
+                        Start Consultation
+                      </a>
+                    </Button>
+                  ) : (
+                    <Button className="w-full" size="lg" disabled>
+                      <Clock className="h-4 w-4 mr-2" />
+                      Start Available Soon
+                    </Button>
+                  )}
+                </>
+              )}
+              
+              {appointment.status === 'IN_PROGRESS' && isThisAppointmentsPatient() && (
                 <Button className="w-full bg-green-600 hover:bg-green-700" size="lg" asChild>
                   <a href={`/appointments/${appointment.id}/video`}>
                     <Video className="h-4 w-4 mr-2" />
@@ -363,10 +648,26 @@ export default async function AppointmentDetailsPage({ params }) {
                 </Button>
               )}
               
-              {appointment.status === 'COMPLETED' && isPatient && !appointment.review && (
-                <Button className="w-full" asChild>
-                  <a href={`/appointments/${appointment.id}/review`}>Leave Review</a>
+              {appointment.status === 'IN_PROGRESS' && isThisAppointmentsDoctor() && (
+                <Button className="w-full bg-green-600 hover:bg-green-700" size="lg" asChild>
+                  <a href={`/dashboard/appointments/${appointment.id}/video`}>
+                    <Video className="h-4 w-4 mr-2" />
+                    Continue Consultation
+                  </a>
                 </Button>
+              )}
+              
+              {appointment.status === 'COMPLETED' && isThisAppointmentsPatient() && !appointment.review && (
+                <ReviewDialog
+                  appointmentId={appointment.id}
+                  trigger={
+                    <Button className="w-full">
+                      <Star className="h-4 w-4 mr-2" />
+                      Leave Review
+                    </Button>
+                  }
+                  onReviewSubmitted={handleReviewSubmitted}
+                />
               )}
             </CardContent>
           </Card>

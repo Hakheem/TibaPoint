@@ -18,7 +18,7 @@ import {
   SignedOut,
   SignInButton,
   UserButton,
-} from "@clerk/nextjs";
+} from "@clerk/nextjs"
 
 const Navbar = ({ dbUser }) => {
   const [scrolled, setScrolled] = useState(false);
@@ -46,8 +46,8 @@ const Navbar = ({ dbUser }) => {
     switch (role) {
       case "PATIENT":
         return {
-          href: "/doctors",
-          text: "Find Doctors",
+          href: "/appointments",
+          text: "My Appointments",
           icon: <Calendar className="h-4 w-4" />,
           variant: "secondary"
         };

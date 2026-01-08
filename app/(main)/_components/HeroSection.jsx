@@ -12,7 +12,7 @@ export default function HeroSection() {
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute -top-40 -right-40 size-40 rounded-full bg-primary/10 blur-2xl" />
         <div className="absolute -bottom-40 -left-40 size-40 rounded-full bg-primary/5 dark:bg-teal-300/10 blur-2xl" />
-      </div>
+      </div> 
  
       <div className="relative mx-auto container padded">
         <div className="flex flex-col items-center lg:items-center lg:justify-center">

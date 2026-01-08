@@ -49,7 +49,7 @@ export default function AdminEarningsPage() {
     totalRevenue: 0,
     totalConsultations: 0,
     appointments: [],
-    earningsByDoctor: []
+    earningsByDoctor: [] 
   })
   const [monthlyStats, setMonthlyStats] = useState({
     period: 'month',

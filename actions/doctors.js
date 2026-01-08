@@ -503,10 +503,6 @@ export async function toggleDoctorAvailability() {
   }
 }
 
-// ============================================
-// HELPER FUNCTION FOR PATIENT BOOKING (YOU'LL USE THIS LATER)
-// ============================================
-
 export async function getDoctorAvailableSlots(doctorId, targetDate) {
   try {
     // Get the day of week from targetDate (0 = Sunday, 6 = Saturday)
@@ -569,10 +565,7 @@ export async function getDoctorAvailableSlots(doctorId, targetDate) {
 }
 
 
-// ============================================
 // DOCTOR APPOINTMENT FUNCTIONS
-// ============================================
-
 export async function getDoctorAppointments(filter = "all") {
   try {
     const { userId } = await auth();
@@ -897,5 +890,99 @@ export async function cancelAppointment(appointmentId, reason) {
   } catch (error) {  // ✅ Fixed: was 'Error'
     console.error("Failed to cancel appointment:", error);
     return { success: false, error: "Failed to cancel appointment" };
+  }
+}
+
+// BULK AVAILABILITY MANAGEMENT
+export async function bulkSetAvailability(slots) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const doctor = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "DOCTOR",
+      },
+    });
+
+    if (!doctor) {
+      return { success: false, error: "Doctor not found" };
+    }
+
+    // Validate inputs
+    if (!Array.isArray(slots) || slots.length === 0) {
+      return { success: false, error: "No slots provided" };
+    }
+
+    const validSlots = slots.filter(slot => 
+      slot.dayOfWeek >= 0 && 
+      slot.dayOfWeek <= 6 && 
+      slot.startTime && 
+      slot.endTime
+    );
+
+    if (validSlots.length === 0) {
+      return { success: false, error: "No valid slots provided" };
+    }
+
+    // Get existing slots for this doctor to check for conflicts
+    const existingSlots = await db.availability.findMany({
+      where: {
+        doctorId: doctor.id,
+      },
+      select: {
+        dayOfWeek: true,
+        startTime: true,
+      },
+    });
+
+    // Create a set of existing slot keys for quick lookup
+    const existingSlotKeys = new Set(
+      existingSlots.map(slot => `${slot.dayOfWeek}:${slot.startTime}`)
+    );
+
+    // Filter out slots that already exist
+    const newSlots = validSlots.filter(slot => {
+      const slotKey = `${slot.dayOfWeek}:${slot.startTime}`;
+      return !existingSlotKeys.has(slotKey);
+    });
+
+    if (newSlots.length === 0) {
+      return { 
+        success: false, 
+        error: "All selected slots already exist" 
+      };
+    }
+
+    // Create all new slots in a single transaction
+    const results = await db.$transaction(
+      newSlots.map(slot =>
+        db.availability.create({
+          data: {
+            doctorId: doctor.id,
+            dayOfWeek: slot.dayOfWeek,
+            startTime: slot.startTime,
+            endTime: slot.endTime,
+            isAvailable: true,
+          },
+        })
+      )
+    );
+
+    revalidatePath("/dashboard/availability");
+    
+    return { 
+      success: true, 
+      count: results.length,
+      created: results.length,
+      skipped: validSlots.length - newSlots.length
+    };
+  } catch (error) {
+    console.error("Failed to bulk set availability:", error);
+    return { success: false, error: "Failed to save slots" };
   }
 }

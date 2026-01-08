@@ -120,7 +120,7 @@ export default function DoctorVideoCallPage() {
           </CardContent>
         </Card>
       </div>
-    );
+    ); 
   }
 
   if (!config || !token) {
@@ -166,7 +166,7 @@ export default function DoctorVideoCallPage() {
         </div>
         
         {/* Video Call Component */}
-        <div className="h-[calc(100vh-180px)]">
+        <div className="h-[90vh]">
           <VideoCall
             channelName={config.channelName}
             token={token}

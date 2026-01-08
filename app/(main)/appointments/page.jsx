@@ -1,5 +1,4 @@
 import { redirect } from 'next/navigation'
-import { auth } from '@clerk/nextjs/server'
 import { checkUser } from '@/lib/checkUser'
 import { Calendar, Clock, Video, CheckCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -23,120 +22,7 @@ const statusColors = {
   CANCELLED: 'bg-red-100 text-red-800',
 }
 
-// Appointment Card Component
-function AppointmentCard({ appointment, userRole = 'PATIENT' }) {
-  const status = appointment.status || 'SCHEDULED'
-  const doctor = appointment.doctor
-  const patient = appointment.patient
-  
-  return (
-    <Card className="hover:shadow-md transition-shadow">
-      <CardHeader>
-        <div className="flex justify-between items-start">
-          <div className="flex items-center gap-3">
-            <Avatar className="h-12 w-12">
-              <AvatarImage src={doctor?.imageUrl} alt={doctor?.name} />
-              <AvatarFallback>{doctor?.name?.charAt(0) || 'D'}</AvatarFallback>
-            </Avatar>
-            <div>
-              <CardTitle className="text-lg">Dr. {doctor?.name}</CardTitle>
-              <CardDescription>{doctor?.speciality || 'General Practitioner'}</CardDescription>
-            </div>
-          </div>
-          <Badge className={statusColors[status]}>
-            {status.replace('_', ' ')}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-3">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">
-              {new Date(appointment.startTime).toLocaleDateString('en-US', {
-                weekday: 'short',
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric'
-              })}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <Clock className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm">
-              {new Date(appointment.startTime).toLocaleTimeString([], { 
-                hour: '2-digit', 
-                minute: '2-digit' 
-              })}
-            </span>
-          </div>
-        </div>
-        
-        {appointment.patientDescription && (
-          <div>
-            <p className="text-sm font-medium mb-1">Reason for consultation:</p>
-            <p className="text-sm text-muted-foreground">{appointment.patientDescription}</p>
-          </div>
-        )}
-      </CardContent>
-      <CardFooter className="flex gap-2">
-        {/* Action buttons based on appointment status */}
-        {(status === 'SCHEDULED' || status === 'CONFIRMED') && userRole === 'PATIENT' && (
-          <>
-            <Button size="sm" variant="outline" asChild>
-              <a href={`/appointments/${appointment.id}/reschedule`}>Reschedule</a>
-            </Button>
-            <Button size="sm" variant="outline" asChild>
-              <a href={`/appointments/${appointment.id}/cancel`}>Cancel</a>
-            </Button>
-            <Button size="sm" className="ml-auto" asChild>
-              <a href={`/appointments/${appointment.id}`}>View Details</a>
-            </Button>
-          </>
-        )}
-        
-        {status === 'IN_PROGRESS' && (
-          <Button size="sm" className="w-full" asChild>
-            <a href={`/appointments/${appointment.id}/video`}>
-              <Video className="h-4 w-4 mr-2" />
-              Join Consultation
-            </a>
-          </Button>
-        )}
-        
-        {status === 'COMPLETED' && userRole === 'PATIENT' && (
-          <div className="flex gap-2 w-full">
-            <Button size="sm" variant="outline" className="flex-1" asChild>
-              <a href={`/appointments/${appointment.id}`}>View Details</a>
-            </Button>
-            {!appointment.review && (
-              <Button size="sm" className="flex-1" asChild>
-                <a href={`/appointments/${appointment.id}/review`}>Leave Review</a>
-              </Button>
-            )}
-          </div>
-        )}
-        
-        {/* Doctor actions */}
-        {userRole === 'DOCTOR' && (
-          <Button size="sm" className="w-full" asChild>
-            <a href={`/dashboard/appointments/${appointment.id}`}>Manage Appointment</a>
-          </Button>
-        )}
-      </CardFooter>
-    </Card>
-  )
-}
-
 export default async function AppointmentsPage() {
-  // Check authentication
-  const { userId } = await auth();
-  
-  if (!userId) {
-    redirect('/sign-in');
-  }
-
-  // Get current user
   const currentUser = await checkUser();
   
   if (!currentUser) {
@@ -164,6 +50,110 @@ export default async function AppointmentsPage() {
       ? pastResult.appointments 
       : [];
 
+    // Appointment Card Component 
+    const AppointmentCard = ({ appointment, userRole = 'PATIENT' }) => {
+      const status = appointment.status || 'SCHEDULED'
+      const doctor = appointment.doctor
+      
+      return (
+        <Card className="hover:shadow-md transition-shadow">
+          <CardHeader>
+            <div className="flex justify-between items-start">
+              <div className="flex items-center gap-3">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src={doctor?.imageUrl} alt={doctor?.name} />
+                  <AvatarFallback>{doctor?.name?.charAt(0) || 'D'}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <CardTitle className="text-lg">Dr. {doctor?.name}</CardTitle>
+                  <CardDescription>{doctor?.speciality || 'General Practitioner'}</CardDescription>
+                </div>
+              </div>
+              <Badge className={statusColors[status]}>
+                {status.replace('_', ' ')}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  {new Date(appointment.startTime).toLocaleDateString('en-US', {
+                    weekday: 'short',
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric'
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Clock className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm">
+                  {new Date(appointment.startTime).toLocaleTimeString([], { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })}
+                </span>
+              </div>
+            </div>
+            
+            {appointment.patientDescription && (
+              <div>
+                <p className="text-sm font-medium mb-1">Reason for consultation:</p>
+                <p className="text-sm text-muted-foreground">{appointment.patientDescription}</p>
+              </div>
+            )}
+          </CardContent>
+          <CardFooter className="flex gap-2">
+            {/* Action buttons based on appointment status */}
+            {(status === 'SCHEDULED' || status === 'CONFIRMED') && userRole === 'PATIENT' && (
+              <>
+                <Button size="sm" variant="outline" asChild>
+                  <a href={`/appointments/${appointment.id}`}>Reschedule</a>
+                </Button>
+                <Button size="sm" variant="outline" asChild>
+                  <a href={`/appointments/${appointment.id}`}>Cancel</a>
+                </Button>
+                <Button size="sm" className="ml-auto" asChild>
+                  <a href={`/appointments/${appointment.id}`}>View Details</a>
+                </Button>
+              </>
+            )}
+            
+            {status === 'IN_PROGRESS' && (
+              <Button size="sm" className="w-full" asChild>
+                <a href={`/appointments/${appointment.id}/video`}>
+                  <Video className="h-4 w-4 mr-2" />
+                  Join Consultation
+                </a>
+              </Button>
+            )}
+            
+            {status === 'COMPLETED' && userRole === 'PATIENT' && (
+              <div className="flex gap-2 w-full">
+                <Button size="sm" variant="outline" className="flex-1" asChild>
+                  <a href={`/appointments/${appointment.id}`}>View Details</a>
+                </Button>
+                {!appointment.review && (
+                  <Button size="sm" className="flex-1" asChild>
+                    <a href={`/appointments/${appointment.id}`}>Leave Review</a>
+                  </Button>
+                )}
+              </div>
+            )}
+            
+            {/* Doctor actions */}
+            {userRole === 'DOCTOR' && (
+              <Button size="sm" className="w-full" asChild>
+                <a href={`/dashboard/appointments/${appointment.id}`}>Manage Appointment</a>
+              </Button>
+            )}
+          </CardFooter>
+        </Card>
+      )
+    }
+
     return (
       <div className="container mx-auto padded py-20">
         {/* Header */}
@@ -177,7 +167,7 @@ export default async function AppointmentsPage() {
         {/* Tabs for Upcoming/Past */}
         <Tabs defaultValue="upcoming" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="upcoming" className=" cursor-pointer flex items-center gap-2">
+            <TabsTrigger value="upcoming" className="cursor-pointer flex items-center gap-2">
               <Calendar className="h-4 w-4" />
               Upcoming ({upcomingAppointments.length})
             </TabsTrigger>
@@ -240,8 +230,6 @@ export default async function AppointmentsPage() {
             )}
           </TabsContent>
         </Tabs>
-
-      
       </div>
     )
 
@@ -249,19 +237,13 @@ export default async function AppointmentsPage() {
     console.error('Error fetching appointments:', error)
     
     return (
-      <div className="container mx-auto padded py-20">
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
           <h2 className="font-bold">Error Loading Appointments</h2>
-          <p>There was an error loading your appointments. Please try refreshing the page.</p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            variant="outline" 
-            className="mt-2"
-          >
-            Refresh Page
-          </Button>
+          <p>There was an error loading your appointments. Please try again later.</p>
         </div>
       </div>
     )
   }
 }
+

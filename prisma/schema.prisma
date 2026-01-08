@@ -10,11 +10,6 @@ datasource db {
 }
 
 
- 
-// ============================================
-// ENUMS
-// ============================================
-
 enum UserRole {
   UNASSIGNED
   PATIENT
@@ -133,6 +128,20 @@ enum TicketPriority {
   URGENT
 }
 
+enum PayoutMethod {
+  MPESA
+  AIRTEL_MONEY
+  TILL_NUMBER
+}
+
+enum PayoutStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
 
 model User {
   id                String   @id @default(cuid())
@@ -193,7 +202,9 @@ model User {
   familyMembers         FamilyMember[]      @relation("FamilyOwner")
   familyMemberOf        FamilyMember[]      @relation("FamilyMemberUser")
   notifications         Notification[]
-  
+  payouts              Payout[]
+
+
   @@index([email])
   @@index([clerkUserId])
   @@index([role])
@@ -578,4 +589,53 @@ model AdminLog {
   @@index([targetType])
   @@index([createdAt])
   @@map("admin_logs")
+}
+
+
+model Payout {
+  id                String        @id @default(cuid())
+  doctorId          String
+  
+  // Payout details
+  amount            Float
+  payoutMethod      PayoutMethod
+  recipientName     String        // Name as it appears on M-Pesa/Airtel/Till
+  phoneNumber       String?       // For M-Pesa/Airtel Money
+  tillNumber        String?       // For Till Number
+  
+  // Status tracking
+  status            PayoutStatus  @default(PENDING)
+  
+  // Admin processing
+  processedBy       String?       // Admin ID who processed
+  processedAt       DateTime?
+  transactionRef    String?       // M-Pesa/Airtel transaction reference
+  failureReason     String?       @db.Text
+  
+  // Balance tracking
+  balanceBefore     Float         // Doctor's balance before payout
+  balanceAfter      Float         // Doctor's balance after payout
+  
+  // Confirmation
+  detailsConfirmed  Boolean       @default(false)
+  confirmedAt       DateTime?
+  
+  // Notes
+  doctorNotes       String?       @db.Text
+  adminNotes        String?       @db.Text
+  
+  // Timestamps
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  cancelledAt       DateTime?
+  cancelledBy       String?       // Admin or Doctor ID
+  cancellationReason String?      @db.Text
+  
+  // Relations
+  doctor            User          @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  
+  @@index([doctorId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("payouts")
 }
