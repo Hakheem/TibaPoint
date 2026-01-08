@@ -1,4 +1,3 @@
-// app/payment/failed/page.tsx
 
 'use client'
 
