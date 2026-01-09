@@ -149,7 +149,7 @@ const DoctorCard = ({ doctor }) => {
       </CardContent>
       <CardFooter className="flex gap-3 pt-0">
         <Button className="flex-1 h-10" variant="outline" asChild>
-          <Link href={`/doctors/${doctor.id}`}>View Profile</Link>
+          <Link href={`/doctor/${doctor.id}`}>View Profile</Link>
         </Button>
         <Button className="flex-1 h-10" asChild>
           <Link href={`/book/${doctor.id}`}>Book Now</Link>

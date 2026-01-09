@@ -4,10 +4,7 @@ import { db } from "@/lib/db";
 import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 
-// ============================================
 // DOCTOR EARNINGS FUNCTIONS
-// ============================================
-
 export async function getDoctorEarnings(filters = {}) {
   try {
     const { userId } = await auth();
@@ -181,10 +178,7 @@ export async function requestWithdrawal(amount) {
   }
 }
 
-// ============================================
 // ADMIN EARNINGS FUNCTIONS
-// ============================================
-
 export async function getPlatformEarnings(filters = {}) {
   try {
     const { userId } = await auth();
@@ -376,10 +370,7 @@ export async function processDoctorPayouts() {
 }
 
 
-// ============================================
 // EARNINGS STATISTICS
-// ============================================
-
 export async function getEarningsStatistics(period = "month") {
   try {
     const { userId } = await auth();

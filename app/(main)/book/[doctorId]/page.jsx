@@ -25,7 +25,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { format } from "date-fns";
 import { getDoctorPublicProfile } from "@/actions/doctors";
 import {
-  bookAppointmentWithValidation,
+  bookAppointmentWithValidation, 
   getAvailableSlotsForDoctor,
 } from "@/actions/appointments";
 import BookAppointmentForm from "@/components/forms/BookAppointmentForm";

@@ -13,7 +13,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, isToday, addDays, addMonths, startOfDay } from 'date-fns'; // Added imports
 import { getAvailableSlotsForDoctor, bookAppointmentWithValidation } from '@/actions/appointments';
 
 const BookAppointmentForm = ({ doctor, currentUser }) => {
@@ -137,20 +137,25 @@ const BookAppointmentForm = ({ doctor, currentUser }) => {
     return `${slot.startTime} - ${slot.endTime}`;
   };
 
-  // Calculate minimum selectable date (tomorrow for 12-hour notice)
   const minDate = () => {
     const date = new Date();
-    date.setDate(date.getDate() + 1);
     date.setHours(0, 0, 0, 0);
     return date;
   };
 
-  // Calculate maximum selectable date (30 days from now)
   const maxDate = () => {
     const date = new Date();
     date.setDate(date.getDate() + 30);
     date.setHours(23, 59, 59, 999);
     return date;
+  };
+
+  const isDateDisabled = (date) => {
+    const today = startOfDay(new Date());
+    const thirtyDaysFromNow = addDays(today, 30);
+    
+    // Disable if date is before today or more than 30 days from now
+    return date < today || date > thirtyDaysFromNow;
   };
 
   return (
@@ -196,18 +201,13 @@ const BookAppointmentForm = ({ doctor, currentUser }) => {
                 mode="single"
                 selected={selectedDate}
                 onSelect={setSelectedDate}
-                disabled={(date) => {
-                  const today = new Date();
-                  today.setHours(0, 0, 0, 0);
-                  // Disable past dates and dates beyond 30 days
-                  return date < minDate() || date > maxDate();
-                }}
+                disabled={isDateDisabled} // FIXED: Use the corrected function
                 initialFocus
               />
             </PopoverContent>
           </Popover>
           <p className="text-xs text-muted-foreground">
-            Select a date to see available 30-minute time slots
+            Select a date (today to 30 days from now) to see available 30-minute time slots
           </p>
         </div>
 
@@ -231,7 +231,7 @@ const BookAppointmentForm = ({ doctor, currentUser }) => {
               <div className="text-center py-8 border rounded-lg">
                 <Clock className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">
-                  No available 30-minute slots for {format(selectedDate, 'MMMM d, yyyy')}
+                  No available slots for {format(selectedDate, 'MMMM d, yyyy')}
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   Please select another date
@@ -343,4 +343,3 @@ const BookAppointmentForm = ({ doctor, currentUser }) => {
 };
 
 export default BookAppointmentForm;
-

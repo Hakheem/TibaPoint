@@ -18,7 +18,12 @@ import {
   Bell,
   ChevronDown,
   ChevronRight,
+  HelpCircle,
+  Eye,
+  CheckCircle,
+  MessageSquare
 } from 'lucide-react'
+import { NotificationBadge } from '@/components/notifications/NotificationBadge'
 
 const AdminSidebar = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false)
@@ -57,6 +62,11 @@ const AdminSidebar = ({ user }) => {
       ],
     },
     {
+      name: 'Earnings',
+      href: '/admin/earnings',
+      icon: DollarSign,
+    },
+    {
       name: 'Refunds',
       href: '/admin/refunds',
       icon: CreditCard,
@@ -72,11 +82,6 @@ const AdminSidebar = ({ user }) => {
       icon: Package,
     },
     {
-      name: 'Transactions',
-      href: '/admin/transactions',
-      icon: DollarSign,
-    },
-    {
       name: 'Analytics & Reports',
       href: '/admin/analytics',
       icon: BarChart3,
@@ -88,14 +93,24 @@ const AdminSidebar = ({ user }) => {
       ],
     },
     {
+      name: 'Notifications',
+      href: '/admin/notifications',
+      icon: Bell,
+    },
+    {
       name: 'System',
       href: '/admin/system',
       icon: Settings,
       subItems: [
         { name: 'Configuration', href: '/admin/system/config' },
         { name: 'Logs', href: '/admin/system/logs' },
-        { name: 'Notifications', href: '/admin/system/notifications' },
+        { name: 'Settings', href: '/admin/system/settings' },
       ],
+    },
+    {
+      name: 'Support',
+      href: '/admin/support',
+      icon: MessageSquare,
     },
   ]
 
@@ -119,7 +134,9 @@ const AdminSidebar = ({ user }) => {
 
   const isExpanded = (itemName) => {
     // Auto-expand if subitem is active
-    if (isActive(`/admin/${itemName.toLowerCase().replace(' ', '-')}`)) {
+    if (navigation.some(item => 
+      item.subItems?.some(sub => sub.href === pathname)
+    )) {
       return true
     }
     return expandedItems[itemName] || false
@@ -131,14 +148,14 @@ const AdminSidebar = ({ user }) => {
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 rounded-lg bg-white shadow-md border"
+          className="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700"
         >
           {isOpen ? (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           ) : (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           )}
@@ -147,22 +164,22 @@ const AdminSidebar = ({ user }) => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-900 border-r shadow-lg transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out
         lg:relative lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         flex flex-col h-screen
       `}>
         {/* Logo and Admin Info */}
-        <div className="p-6 border-b">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center space-x-3">
-            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-              <Shield className="h-6 w-6 text-primary" />
+            <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center">
+              <Shield className="h-6 w-6 text-white" />
             </div>
             <div>
               <h2 className="font-semibold text-lg text-gray-900 dark:text-white">{user.name}</h2>
               <p className="text-sm text-gray-600 dark:text-gray-300">Administrator</p>
               <div className="flex items-center mt-1">
                 <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
-                <span className="text-xs text-gray-500 dark:text-gray-400">Online</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Platform Admin</span>
               </div>
             </div>
           </div>
@@ -186,7 +203,7 @@ const AdminSidebar = ({ user }) => {
                         className={`
                           flex items-center flex-1 space-x-3 px-3 py-2.5 rounded-lg transition-colors
                           ${active 
-                            ? 'bg-primary/10 text-primary dark:bg-primary/20' 
+                            ? 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400 border border-purple-100 dark:border-purple-800' 
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                           }
                         `}
@@ -241,19 +258,47 @@ const AdminSidebar = ({ user }) => {
         </nav>
 
         {/* Bottom Section - Fixed at bottom */}
-        <div className="border-t p-4 bg-gray-50 dark:bg-gray-900/50">
+        <div className="border-t border-gray-200 dark:border-gray-800 p-4 bg-gray-50 dark:bg-gray-900/50">
           <div className="space-y-3">
-            <div className="flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Pending Actions</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Check verification requests</p>
+            {/* Dynamic Notification Badge */}
+            <NotificationBadge />
+
+            {/* Quick Actions */}
+            <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+              <p className="text-xs font-medium text-gray-900 dark:text-white mb-2">Quick Actions</p>
+              <div className="space-y-2">
+                <Link
+                  href="/admin/doctors/pending"
+                  className="flex items-center justify-between text-sm hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <span className="text-gray-700 dark:text-gray-300">Verify Doctors</span>
+                  <span className="h-5 w-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs flex items-center justify-center">
+                    3
+                  </span>
+                </Link>
+                <Link
+                  href="/admin/support"
+                  className="flex items-center justify-between text-sm hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <span className="text-gray-700 dark:text-gray-300">Support Tickets</span>
+                  <span className="h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs flex items-center justify-center">
+                    5
+                  </span>
+                </Link>
               </div>
-              <span className="h-6 w-6 rounded-full bg-red-500 flex items-center justify-center text-xs text-white">
-                3
-              </span>
             </div>
 
+            {/* Support Link */}
+            <Link
+              href="/admin/support"
+              className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
+              onClick={() => setIsOpen(false)}
+            >
+              <HelpCircle size={20} />
+              <span className="text-sm font-medium">Help & Support</span>
+            </Link>
           </div>
         </div>
       </aside>

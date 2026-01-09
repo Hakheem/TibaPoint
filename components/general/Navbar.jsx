@@ -22,15 +22,14 @@ import {
 
 const Navbar = ({ dbUser }) => {
   const [scrolled, setScrolled] = useState(false);
-  const [isClient, setIsClient] = useState(false); // Track if we're on client
+  const [isClient, setIsClient] = useState(false); 
   
-  // Safely extract user data
   const role = dbUser?.role || "UNASSIGNED";
   const credits = dbUser?.credits || 0;
   const consultations = Math.floor(credits / 2);
 
   useEffect(() => {
-    setIsClient(true); // Set to true when component mounts on client
+    setIsClient(true); 
     
     const onScroll = () => {
       setScrolled(window.scrollY > 10);
@@ -77,7 +76,6 @@ const Navbar = ({ dbUser }) => {
 
   const roleConfig = getRoleConfig();
 
-  // Only apply scroll-based styles on client to avoid hydration mismatch
   const headerClass = !isClient 
     ? "fixed inset-x-0 top-0 z-50 bg-transparent" 
     : `fixed inset-x-0 top-0 z-50 transition-all ${

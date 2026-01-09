@@ -5,9 +5,6 @@ import { auth } from '@clerk/nextjs/server';
 import { revalidatePath } from 'next/cache';
 import { RtcTokenBuilder, RtcRole } from 'agora-access-token';
 
-
-const AGORA_APP_ID = process.env.AGORA_APP_ID;
-const AGORA_APP_CERTIFICATE = process.env.AGORA_APP_CERTIFICATE;
 const AGORA_EXPIRE_TIME = 3600; // 1 hour
 
 export async function generateAgoraToken(appointmentId, userId, role = "doctor") {
@@ -18,11 +15,22 @@ export async function generateAgoraToken(appointmentId, userId, role = "doctor")
       return { success: false, error: "Unauthorized" };
     }
 
+    const AGORA_APP_ID = process.env.AGORA_ID; 
+    const AGORA_APP_CERTIFICATE = process.env.AGORA_CERTIFICATE;
+
+    console.log('🔑 Token generation - Checking credentials:', {
+      usingAppId: AGORA_APP_ID ? 'Found (AGORA_ID)' : 'MISSING',
+      usingCertificate: AGORA_APP_CERTIFICATE ? 'Found' : 'MISSING',
+      fromEnv: 'AGORA_ID and AGORA_CERTIFICATE'
+    });
+
     // Verify Agora credentials exist
     if (!AGORA_APP_ID || !AGORA_APP_CERTIFICATE) {
-      console.error('❌ Missing Agora credentials:', {
-        AGORA_APP_ID: AGORA_APP_ID ? 'present' : 'MISSING',
-        AGORA_APP_CERTIFICATE: AGORA_APP_CERTIFICATE ? 'present' : 'MISSING',
+      console.error('❌ Missing Agora credentials from ENV:', {
+        AGORA_ID: process.env.AGORA_ID ? 'present' : 'MISSING',
+        AGORA_CERTIFICATE: process.env.AGORA_CERTIFICATE ? 'present' : 'MISSING',
+        NEXT_PUBLIC_AGORA_APP_ID: process.env.NEXT_PUBLIC_AGORA_APP_ID ? 'present' : 'MISSING',
+        AGORA_APP_ID: process.env.AGORA_APP_ID ? 'present' : 'MISSING'
       });
       return { 
         success: false, 
@@ -61,12 +69,10 @@ export async function generateAgoraToken(appointmentId, userId, role = "doctor")
       return { success: false, error: "Appointment is not active" };
     }
 
-    // Check if appointment time is within valid range
     const now = new Date();
     const startTime = new Date(appointment.startTime);
     const endTime = appointment.endTime ? new Date(appointment.endTime) : new Date(startTime.getTime() + 90 * 60000);
 
-    // Allow joining 15 minutes before start time and up to 15 minutes after end time
     const canJoinStart = new Date(startTime.getTime() - 15 * 60000);
     const canJoinEnd = new Date(endTime.getTime() + 15 * 60000);
 
@@ -85,58 +91,140 @@ export async function generateAgoraToken(appointmentId, userId, role = "doctor")
     // Generate unique channel name using appointment ID
     const channelName = `appointment_${appointmentId}`;
     
-    // Convert userId to number for Agora (must be a number)
-    const agoraUid = parseInt(userId) || Math.floor(Math.random() * 100000);
+    let agoraUid;
+    if (userId && !isNaN(parseInt(userId)) && parseInt(userId) > 0) {
+      agoraUid = parseInt(userId);
+    } else {
+      agoraUid = Number(user.id) || Math.floor(Math.random() * 90000) + 10000;
+    }
     
-    // Both doctor and patient should be publishers for video calls
     const agoraRole = RtcRole.PUBLISHER;
     
     // Calculate privilege expire time
     const currentTime = Math.floor(Date.now() / 1000);
     const privilegeExpireTime = currentTime + AGORA_EXPIRE_TIME;
     
-    console.log('📹 Generating token with:', {
+    console.log('📹 Generating Agora token with:', {
       channelName,
       agoraUid,
       role: agoraRole,
       expiresIn: AGORA_EXPIRE_TIME + 's',
+      appId: AGORA_APP_ID
     });
 
     // Generate token
     const token = RtcTokenBuilder.buildTokenWithUid(
-      AGORA_APP_ID,
-      AGORA_APP_CERTIFICATE,
+      AGORA_APP_ID,          
+      AGORA_APP_CERTIFICATE, 
       channelName,
       agoraUid,
       agoraRole,
       privilegeExpireTime
     );
 
-    // Update appointment with video session info
-    await db.appointment.update({
-      where: { id: appointmentId },
-      data: {
-        videoSessionId: `session_${appointmentId}`,
-        channelName: channelName,
-        agoraUid: agoraUid,
-        videoSessionToken: token,
-      },
+    console.log('✅ Token generated successfully', {
+      tokenLength: token.length,
+      uid: agoraUid
     });
-
-    console.log('✅ Token generated successfully');
 
     return {
       success: true,
       token,
       channelName,
       uid: agoraUid,
-      appId: AGORA_APP_ID,
+      appId: AGORA_APP_ID, 
       role: agoraRole,
-      appointment,
+      appointment: {
+        id: appointment.id,
+        status: appointment.status,
+        startTime: appointment.startTime,
+      },
     };
   } catch (error) {
     console.error("❌ Failed to generate Agora token:", error);
-    return { success: false, error: "Failed to generate video token" };
+    return { success: false, error: `Failed to generate video token: ${error.message}` };
+  }
+}
+
+export async function getAgoraConfig(appointmentId) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const user = await db.user.findUnique({
+      where: { clerkUserId: userId },
+    });
+
+    if (!user) {
+      return { success: false, error: "User not found" };
+    }
+
+    const appointment = await db.appointment.findUnique({
+      where: { id: appointmentId },
+      include: {
+        patient: {
+          select: {
+            id: true,
+            name: true,
+            imageUrl: true,
+          },
+        },
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            imageUrl: true,
+            speciality: true,
+          },
+        },
+      },
+    });
+
+    if (!appointment) {
+      return { success: false, error: "Appointment not found" };
+    }
+
+    // Check if user has access
+    if (user.id !== appointment.patientId && user.id !== appointment.doctorId) {
+      return { success: false, error: "Access denied" };
+    }
+
+    const role = user.id === appointment.doctorId ? "doctor" : "patient";
+    
+    const agoraUid = Number(user.id);
+    
+    const finalUid = Number.isInteger(agoraUid) && agoraUid > 0 ? agoraUid : Math.floor(Math.random() * 100000);
+    
+    const appId = process.env.NEXT_PUBLIC_AGORA_APP_ID; 
+
+    console.log('🎬 Agora Config for user:', {
+      userId: user.id,
+      role,
+      uid: finalUid,
+      appId
+    });
+
+    return {
+      success: true,
+      config: {
+        appointmentId: appointment.id,
+        channelName: `appointment_${appointmentId}`, 
+        role,
+        participant: role === "doctor" ? appointment.doctor : appointment.patient,
+        counterpart: role === "doctor" ? appointment.patient : appointment.doctor,
+        status: appointment.status,
+        startTime: appointment.startTime,
+        startedAt: appointment.startedAt,
+        agoraUid: finalUid,
+        appId: appId, 
+      },
+    };
+  } catch (error) {
+    console.error("Failed to get Agora config:", error);
+    return { success: false, error: "Failed to get video configuration" };
   }
 }
 
@@ -292,77 +380,7 @@ export async function endVideoSession(appointmentId, notes, diagnosis, prescript
   }
 }
 
-export async function getAgoraConfig(appointmentId) {
-  try {
-    const { userId } = await auth();
 
-    if (!userId) {
-      return { success: false, error: "Unauthorized" };
-    }
-
-    const user = await db.user.findUnique({
-      where: { clerkUserId: userId },
-    });
-
-    if (!user) {
-      return { success: false, error: "User not found" };
-    }
-
-    const appointment = await db.appointment.findUnique({
-      where: { id: appointmentId },
-      include: {
-        patient: {
-          select: {
-            id: true,
-            name: true,
-            imageUrl: true,
-          },
-        },
-        doctor: {
-          select: {
-            id: true,
-            name: true,
-            imageUrl: true,
-            speciality: true,
-          },
-        },
-      },
-    });
-
-    if (!appointment) {
-      return { success: false, error: "Appointment not found" };
-    }
-
-    // Check if user has access
-    if (user.id !== appointment.patientId && user.id !== appointment.doctorId) {
-      return { success: false, error: "Access denied" };
-    }
-
-    // Determine user role for this appointment
-    const role = user.id === appointment.doctorId ? "doctor" : "patient";
-    
-    // Use user's DB ID as Agora UID
-    const agoraUid = user.id;
-
-    return {
-      success: true,
-      config: {
-        appointmentId: appointment.id,
-        channelName: appointment.channelName || `appointment_${appointmentId}`,
-        role,
-        participant: role === "doctor" ? appointment.doctor : appointment.patient,
-        counterpart: role === "doctor" ? appointment.patient : appointment.doctor,
-        status: appointment.status,
-        startTime: appointment.startTime,
-        startedAt: appointment.startedAt,
-        agoraUid: agoraUid,
-      },
-    };
-  } catch (error) {
-    console.error("Failed to get Agora config:", error);
-    return { success: false, error: "Failed to get video configuration" };
-  }
-}
 
 // BOOKING FUNCTIONS 
 

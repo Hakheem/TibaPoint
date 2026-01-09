@@ -10,7 +10,7 @@ import VideoCall from '@/components/video-call/VideoCall';
 import { generateAgoraToken, getAgoraConfig } from '@/actions/appointments';
 import { toast } from 'sonner';
 
-export default function PatientVideoCallPage() {
+export default function PatientVideoCallPage() { 
   const params = useParams();
   const router = useRouter(); 
   const appointmentId = params?.id;
@@ -31,13 +31,22 @@ export default function PatientVideoCallPage() {
       setLoading(true);
       setError('');
       
+      console.log('👤 Loading video config for patient, appointment:', appointmentId);
+
       // Get Agora configuration
       const configResult = await getAgoraConfig(appointmentId);
       if (!configResult.success) {
+        console.error('Config failed:', configResult.error);
         setError(configResult.error);
         toast.error(configResult.error);
         return;
       }
+
+      console.log('✅ Config loaded:', {
+        role: configResult.config.role,
+        uid: configResult.config.agoraUid,
+        appId: configResult.config.appId
+      });
 
       // Generate token
       const tokenResult = await generateAgoraToken(
@@ -47,6 +56,7 @@ export default function PatientVideoCallPage() {
       );
 
       if (!tokenResult.success) {
+        console.error('Token generation failed:', tokenResult.error);
         setError(tokenResult.error);
         toast.error(tokenResult.error);
         return;
@@ -55,11 +65,15 @@ export default function PatientVideoCallPage() {
       setConfig(configResult.config);
       setToken(tokenResult.token);
       
-      console.log('✅ Video config loaded:', {
+      console.log('🎬 Video ready for patient:', {
         role: configResult.config.role,
         channel: configResult.config.channelName,
-        uid: configResult.config.agoraUid
+        uid: configResult.config.agoraUid,
+        tokenLength: tokenResult.token?.length,
+        appId: tokenResult.appId
       });
+      
+      toast.success('Video consultation ready to join');
     } catch (err) {
       console.error('Failed to load video config:', err);
       setError('Failed to initialize video call. Please try again.');
@@ -70,7 +84,9 @@ export default function PatientVideoCallPage() {
   };
 
   const handleCallEnd = async (duration) => {
-    toast.success(`Call ended. Duration: ${Math.floor(duration / 60)} minutes`);
+    const minutes = Math.floor(duration / 60);
+    const seconds = duration % 60;
+    toast.success(`Call ended. Duration: ${minutes}:${seconds.toString().padStart(2, '0')}`);
     router.push(`/appointments/${appointmentId}`);
   };
 
@@ -143,7 +159,7 @@ export default function PatientVideoCallPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900 p-4">
+    <div className="min-h-screen bg-gray-900 pt-20 p-4">
       <div className="container mx-auto max-w-7xl">
         {/* Header Info */}
         <div className="mb-4 bg-gray-800 rounded-lg p-4">
@@ -153,13 +169,17 @@ export default function PatientVideoCallPage() {
                 Video Consultation
               </h1>
               <p className="text-gray-400 text-sm">
-                With Dr. {config.counterpart?.name} • {config.counterpart?.speciality || 'Doctor'}
+                With Dr. {config.counterpart?.name || 'Doctor'} • {config.counterpart?.speciality || 'Medical Specialist'}
+              </p>
+              <p className="text-gray-400 text-xs mt-1">
+                Channel: <span className="font-mono">{config.channelName}</span> • 
+                Your UID: <span className="font-mono">{config.agoraUid}</span>
               </p>
             </div>
             <div className="px-3 py-1 bg-green-500/20 rounded-full">
               <span className="text-green-400 text-sm font-medium flex items-center gap-2">
                 <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                Live
+                Ready
               </span>
             </div>
           </div>
@@ -172,9 +192,10 @@ export default function PatientVideoCallPage() {
             token={token}
             uid={config.agoraUid}
             role={config.role}
+            appId={config.appId} // Pass appId from config
             onCallEnd={handleCallEnd}
             appointmentId={appointmentId}
-            participantName={config.counterpart?.name}
+            participantName={config.counterpart?.name || 'Doctor'}
             participantImage={config.counterpart?.imageUrl}
           />
         </div>

@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Agora Video Test - Dual Mode</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 1000px; margin: 0 auto; }
+        .container { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .config-panel { grid-column: 1 / -1; }
+        .video-panel { border: 1px solid #ddd; padding: 15px; border-radius: 8px; }
+        h1 { color: #333; }
+        h2 { color: #666; margin-top: 0; }
+        label { display: block; margin: 10px 0 5px; font-weight: bold; }
+        input, textarea, select { 
+            width: 100%; 
+            padding: 8px; 
+            margin-bottom: 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 4px; 
+            box-sizing: border-box;
+        }
+        textarea { height: 80px; font-family: monospace; }
+        button { 
+            padding: 10px 20px; 
+            margin: 5px; 
+            border: none; 
+            border-radius: 4px; 
+            cursor: pointer; 
+            font-weight: bold;
+        }
+        .btn-with-cam { background: #28a745; color: white; }
+        .btn-without-cam { background: #007bff; color: white; }
+        .btn-leave { background: #dc3545; color: white; }
+        button:disabled { background: #ccc; cursor: not-allowed; }
+        .status { 
+            padding: 10px; 
+            margin: 10px 0; 
+            border-radius: 4px; 
+            font-weight: bold;
+        }
+        .status-connected { background: #d4edda; color: #155724; }
+        .status-disconnected { background: #f8d7da; color: #721c24; }
+        .video-container { 
+            width: 100%; 
+            height: 300px; 
+            background: #000; 
+            margin-top: 10px;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        video { width: 100%; height: 100%; object-fit: cover; }
+        .remote-video { background: #222; }
+        .local-video { background: #333; }
+        .instructions { 
+            background: #f8f9fa; 
+            padding: 15px; 
+            border-radius: 4px; 
+            margin-top: 20px;
+            grid-column: 1 / -1;
+        }
+        .user-info { 
+            background: #e9ecef; 
+            padding: 8px 12px; 
+            border-radius: 4px; 
+            margin: 5px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎥 Agora Video Test - Dual Mode</h1>
+    <p>Test with or without camera on same computer</p>
+    
+    <div class="container">
+        <!-- Configuration Panel -->
+        <div class="config-panel">
+            <h2>🔧 Configuration</h2>
+            
+            <label for="appId">App ID:</label>
+            <input type="text" id="appId" value="ca71d48e543f496081f91c258e4aaee8" readonly>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div>
+                    <label for="channel">Channel Name:</label>
+                    <input type="text" id="channel" value="test_channel_1767956050194">
+                </div>
+                <div>
+                    <label for="userId">User ID:</label>
+                    <input type="number" id="userId" value="62984">
+                </div>
+            </div>
+            
+            <label for="token">Token:</label>
+            <textarea id="token" placeholder="Paste token here...">006ca71d48e543f496081f91c258e4aaee8IAD4EuSwPZz5CrRPz1Gh+YltjPHB+9TZoOrJ9G1INA08eJUsC3tAHPCvIgBiLIbU0i9iaQQAAQBi7GBpAgBi7GBpAwBi7GBpBABi7GBp</textarea>
+            
+            <div class="user-info">
+                <strong>Current User:</strong> UID <span id="currentUid">62984</span> | 
+                <strong>Channel:</strong> <span id="currentChannel">test_channel_1767956050194</span>
+            </div>
+        </div>
+        
+        <!-- Local Video Panel -->
+        <div class="video-panel">
+            <h2>📹 Local Video (You)</h2>
+            <div id="localStatus" class="status status-disconnected">Disconnected</div>
+            <div class="video-container">
+                <div id="localVideo"></div>
+            </div>
+            <div style="margin-top: 15px;">
+                <button onclick="joinWithCamera()" class="btn-with-cam">Join WITH Camera</button>
+                <button onclick="joinWithoutCamera()" class="btn-without-cam">Join WITHOUT Camera</button>
+                <button onclick="leaveChannel()" class="btn-leave">Leave Channel</button>
+            </div>
+            <div style="margin-top: 10px; font-size: 12px; color: #666;">
+                <strong>Tip:</strong> Use "WITH Camera" in Chrome, "WITHOUT Camera" in Firefox/Incognito
+            </div>
+        </div>
+        
+        <!-- Remote Video Panel -->
+        <div class="video-panel">
+            <h2>👥 Remote Video (Other Users)</h2>
+            <div id="remoteStatus" class="status status-disconnected">Waiting for other users...</div>
+            <div class="video-container remote-video">
+                <div id="remoteVideo"></div>
+            </div>
+            <div style="margin-top: 15px;">
+                <button onclick="switchUser()" style="background: #6c757d; color: white;">Switch to UID 62985</button>
+                <button onclick="generateNewToken()" style="background: #17a2b8; color: white;">Generate New Token</button>
+            </div>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="instructions">
+            <h3>📋 Testing Instructions</h3>
+            <ol>
+                <li><strong>Tab 1 (Chrome):</strong> Click "Join WITH Camera"</li>
+                <li><strong>Tab 2 (Firefox/Incognito):</strong> 
+                    <button onclick="copyConfigForSecondUser()" style="padding: 5px 10px; font-size: 12px;">Copy Config for Second User</button>
+                    Then click "Join WITHOUT Camera"
+                </li>
+                <li>You should see each other's video in the remote panels</li>
+                <li>Use "Switch to UID 62985" for the second tab</li>
+            </ol>
+            <div id="secondUserConfig" style="display: none; background: #fff; padding: 10px; border-radius: 4px; margin-top: 10px; border: 1px solid #ddd;">
+                <strong>Second User Config:</strong><br>
+                UID: 62985<br>
+                Channel: <span id="secondChannel"></span><br>
+                Token: <span id="secondToken"></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Agora Web SDK -->
+    <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.24.2.js"></script>
+    
+    <script>
+        let client = null;
+        let localTracks = [];
+        let isJoined = false;
+        let currentUid = 62984;
+        let currentChannel = 'test_channel_1767956050194';
+
+        // Update display
+        document.getElementById('currentUid').textContent = currentUid;
+        document.getElementById('currentChannel').textContent = currentChannel;
+
+        function updateStatus(connected, message = '') {
+            const statusEl = document.getElementById('localStatus');
+            if (connected) {
+                statusEl.textContent = message || 'Connected to channel';
+                statusEl.className = 'status status-connected';
+            } else {
+                statusEl.textContent = message || 'Disconnected';
+                statusEl.className = 'status status-disconnected';
+            }
+        }
+
+        function updateRemoteStatus(hasRemoteUsers) {
+            const statusEl = document.getElementById('remoteStatus');
+            if (hasRemoteUsers) {
+                statusEl.textContent = 'Remote user connected';
+                statusEl.className = 'status status-connected';
+            } else {
+                statusEl.textContent = 'Waiting for other users...';
+                statusEl.className = 'status status-disconnected';
+            }
+        }
+
+        async function joinWithCamera() {
+            await joinChannel(true);
+        }
+
+        async function joinWithoutCamera() {
+            await joinChannel(false);
+        }
+
+        async function joinChannel(useCamera = true) {
+            if (isJoined) {
+                alert('Already joined channel! Leave first.');
+                return;
+            }
+
+            const appId = document.getElementById('appId').value;
+            const channel = document.getElementById('channel').value;
+            const uid = document.getElementById('userId').value;
+            const token = document.getElementById('token').value;
+
+            if (!appId || !channel || !uid || !token) {
+                alert('Please fill all fields');
+                return;
+            }
+
+            try {
+                updateStatus(false, 'Connecting...');
+                
+                // Initialize client
+                client = AgoraRTC.createClient({ mode: 'rtc', codec: 'vp8' });
+                
+                // Join channel
+                await client.join(appId, channel, token || null, uid);
+                console.log('✅ Joined channel:', channel, 'as UID:', uid);
+                
+                currentUid = uid;
+                currentChannel = channel;
+                document.getElementById('currentUid').textContent = currentUid;
+                document.getElementById('currentChannel').textContent = currentChannel;
+                
+                // Create local tracks if using camera
+                if (useCamera) {
+                    try {
+                        const audioTrack = await AgoraRTC.createMicrophoneAudioTrack();
+                        const videoTrack = await AgoraRTC.createCameraVideoTrack();
+                        localTracks = [audioTrack, videoTrack];
+                        
+                        // Play local video
+                        videoTrack.play('localVideo');
+                        
+                        // Publish tracks
+                        await client.publish(localTracks);
+                        console.log('📹 Published local tracks with camera');
+                    } catch (mediaError) {
+                        console.warn('Camera access failed:', mediaError);
+                        alert('Camera access failed. Joining without media.');
+                        localTracks = [];
+                    }
+                } else {
+                    console.log('🎧 Joining without camera (listener mode)');
+                    localTracks = [];
+                }
+                
+                // Setup remote user handling
+                client.on('user-published', async (user, mediaType) => {
+                    console.log('👤 Remote user published:', user.uid, mediaType);
+                    await client.subscribe(user, mediaType);
+                    
+                    if (mediaType === 'video') {
+                        user.videoTrack.play('remoteVideo');
+                        updateRemoteStatus(true);
+                    }
+                    if (mediaType === 'audio') {
+                        user.audioTrack.play();
+                    }
+                });
+                
+                client.on('user-unpublished', (user, mediaType) => {
+                    console.log('👤 Remote user unpublished:', user.uid);
+                    if (mediaType === 'video') {
+                        updateRemoteStatus(false);
+                    }
+                });
+                
+                client.on('user-left', (user) => {
+                    console.log('👋 Remote user left:', user.uid);
+                    updateRemoteStatus(false);
+                });
+                
+                isJoined = true;
+                updateStatus(true, `Connected as UID ${uid}`);
+                
+            } catch (error) {
+                console.error('❌ Join failed:', error);
+                updateStatus(false, `Error: ${error.message}`);
+                alert(`Failed to join: ${error.message}`);
+                
+                // Cleanup on error
+                if (localTracks.length > 0) {
+                    localTracks.forEach(track => track.close());
+                    localTracks = [];
+                }
+                if (client) {
+                    client = null;
+                }
+            }
+        }
+
+        async function leaveChannel() {
+            if (!client) return;
+            
+            try {
+                // Stop local tracks
+                localTracks.forEach(track => {
+                    track.stop();
+                    track.close();
+                });
+                localTracks = [];
+                
+                // Leave channel
+                await client.leave();
+                client = null;
+                
+                // Clear video displays
+                document.getElementById('localVideo').innerHTML = '';
+                document.getElementById('remoteVideo').innerHTML = '';
+                
+                isJoined = false;
+                updateStatus(false, 'Disconnected');
+                updateRemoteStatus(false);
+                
+                console.log('👋 Left channel');
+                
+            } catch (error) {
+                console.error('Leave error:', error);
+            }
+        }
+
+        function switchUser() {
+            const newUid = currentUid == 62984 ? 62985 : 62984;
+            document.getElementById('userId').value = newUid;
+            alert(`Switched to UID: ${newUid}. Now generate a new token for this UID.`);
+        }
+
+        function generateNewToken() {
+            const uid = document.getElementById('userId').value;
+            const channel = document.getElementById('channel').value;
+            alert(`Generate new token for:\nUID: ${uid}\nChannel: ${channel}\n\nUse: node test-video.js`);
+        }
+
+        function copyConfigForSecondUser() {
+            const channel = document.getElementById('channel').value;
+            const secondToken = generateSecondUserToken();
+            
+            document.getElementById('secondChannel').textContent = channel;
+            document.getElementById('secondToken').textContent = secondToken;
+            document.getElementById('secondUserConfig').style.display = 'block';
+            
+            // Copy to clipboard
+            const configText = `Second User Config:\nUID: 62985\nChannel: ${channel}\nToken: ${secondToken}`;
+            navigator.clipboard.writeText(configText).then(() => {
+                alert('Second user config copied to clipboard!');
+            });
+        }
+
+        function generateSecondUserToken() {
+            // This is a dummy token - you need to generate real one
+            return "006ca71d48e543f496081f91c258e4aaee8IAD..." + Date.now();
+        }
+
+        // Auto-fill from URL parameters
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('uid')) {
+                document.getElementById('userId').value = urlParams.get('uid');
+            }
+            if (urlParams.has('channel')) {
+                document.getElementById('channel').value = urlParams.get('channel');
+            }
+            if (urlParams.has('token')) {
+                document.getElementById('token').value = urlParams.get('token');
+            }
+        });
+    </script>
+</body>
+</html>
+

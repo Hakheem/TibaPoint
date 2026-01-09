@@ -15,8 +15,12 @@ import {
   HelpCircle,
   ChevronDown,
   ChevronRight,
-  CalendarClock
+  CalendarClock,
+  Settings,
+  Shield,
+  FileText
 } from 'lucide-react'
+import { NotificationBadge } from '@/components/notifications/NotificationBadge'
 
 const DoctorSidebar = ({ user }) => {
   const [isOpen, setIsOpen] = useState(false)
@@ -29,16 +33,20 @@ const DoctorSidebar = ({ user }) => {
     { name: 'Patients', href: '/dashboard/patients', icon: Users },
     { name: 'Availability', href: '/dashboard/availability', icon: CalendarClock },
     { name: 'Earnings', href: '/dashboard/earnings', icon: CreditCard },
+    // { name: 'Messages', href: '/dashboard/messages', icon: MessageSquare },
     { name: 'Profile', href: '/dashboard/profile', icon: User },
-    // { name: 'Analytics', href: '/dashboard/analytics', icon: BarChart3 },
+    { 
+      name: 'Notifications', 
+      href: '/dashboard/notifications', 
+      icon: Bell,
+    },
     { 
       name: 'Settings', 
       href: '/dashboard/settings', 
-      icon: Bell,
+      icon: Settings,
       subItems: [
         { name: 'General Settings', href: '/dashboard/settings' },
-        { name: 'Notifications', href: '/dashboard/settings/notifications' },
-        { name: 'Security', href: '/dashboard/settings/security' },
+        { name: 'Account Security', href: '/dashboard/settings/security' },
       ]
     },
   ]
@@ -63,7 +71,9 @@ const DoctorSidebar = ({ user }) => {
 
   const isExpanded = (itemName) => {
     // Auto-expand if subitem is active
-    if (isActive(`/dashboard/${itemName.toLowerCase().replace(' ', '-')}`)) {
+    if (navigation.some(item => 
+      item.subItems?.some(sub => sub.href === pathname)
+    )) {
       return true
     }
     return expandedItems[itemName] || false
@@ -75,14 +85,14 @@ const DoctorSidebar = ({ user }) => {
       <div className="lg:hidden fixed top-4 left-4 z-50">
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="p-2 rounded-lg bg-white shadow-md border"
+          className="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700"
         >
           {isOpen ? (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           ) : (
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           )}
@@ -91,14 +101,14 @@ const DoctorSidebar = ({ user }) => {
 
       {/* Sidebar */}
       <aside className={`
-        fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-900 border-r shadow-lg transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out
         lg:relative lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         flex flex-col h-screen
       `}>
         {/* Profile Section */}
-        <div className="p-6 border-b">
+        <div className="p-6 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-teal-400 flex items-center justify-center text-white font-semibold">
               {user.imageUrl ? (
                 <img
                   src={user.imageUrl}
@@ -106,15 +116,17 @@ const DoctorSidebar = ({ user }) => {
                   className="w-12 h-12 rounded-full"
                 />
               ) : (
-                <User className="w-6 h-6 text-primary" />
+                <span className="text-lg">
+                  {user.name?.charAt(0) || 'D'}
+                </span>
               )}
             </div>
             <div>
-              <h2 className="font-semibold text-gray-900 dark:text-white">{user.name}</h2>
+              <h2 className="font-semibold text-gray-900 dark:text-white">Dr. {user.name}</h2>
               <p className="text-sm text-gray-600 dark:text-gray-300">{user.speciality}</p>
               <div className="flex items-center mt-1">
                 <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
-                <span className="text-xs text-gray-500 dark:text-gray-400">Verified</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Online</span>
               </div>
             </div>
           </div>
@@ -138,7 +150,7 @@ const DoctorSidebar = ({ user }) => {
                         className={`
                           flex items-center flex-1 space-x-3 px-3 py-2.5 rounded-lg transition-colors
                           ${active 
-                            ? 'bg-primary/10 text-primary dark:bg-primary/20' 
+                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800' 
                             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
                           }
                         `}
@@ -193,27 +205,21 @@ const DoctorSidebar = ({ user }) => {
         </nav>
 
         {/* Bottom Section - Fixed at bottom */}
-        <div className="border-t p-4 bg-gray-50 dark:bg-gray-900/50">
+        <div className="border-t border-gray-200 dark:border-gray-800 p-4 bg-gray-50 dark:bg-gray-900/50">
           <div className="space-y-3">
-            <div className="flex items-center space-x-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-              <Bell className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Notifications</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">3 unread messages</p>
-              </div>
-              <span className="h-6 w-6 rounded-full bg-red-500 flex items-center justify-center text-xs text-white">
-                3
-              </span>
-            </div>
+            {/* Dynamic Notification Badge */}
+            <NotificationBadge />
 
+            {/* Support Link */}
             <Link
-              href="/support"
+              href="/dashboard/support"
               className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
+              onClick={() => setIsOpen(false)}
             >
               <HelpCircle size={20} />
               <span className="text-sm font-medium">Help & Support</span>
             </Link>
-          
+
           </div>
         </div>
       </aside>

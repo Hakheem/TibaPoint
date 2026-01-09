@@ -36,7 +36,7 @@ export default function ForDoctors() {
       icon: <DollarSign className="h-5 w-5" />,
       title: "Transparent Earnings",
       description:
-        "Keep more of your earnings with our competitive 10% commission and guaranteed weekly payouts.",
+        "Keep more of your earnings with our competitive 12% commission and guaranteed weekly payouts.",
       color: "text-emerald-600 dark:text-emerald-400",
       bgColor: "bg-emerald-50 dark:bg-emerald-950/30",
     },
