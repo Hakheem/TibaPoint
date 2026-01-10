@@ -34,9 +34,10 @@ import {
   Pie,
   Cell
 } from 'recharts'
-
-import { getPlatformEarnings, getEarningsStatistics, processDoctorPayouts, getAllPayouts } from '@/actions/earnings'
+import { getAllPayouts } from '@/actions/payout'
+import { getPlatformEarnings, getEarningsStatistics, processDoctorPayouts } from '@/actions/earnings'
 import { AdminPayoutManagement } from '@/components/admin/AdminPayoutManagement'
+
 
 export default function AdminEarningsPage() {
   const [dateRange, setDateRange] = useState()

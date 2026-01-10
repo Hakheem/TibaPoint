@@ -130,7 +130,66 @@ html, body {
   scroll-behavior: smooth;
 }
 
+/* Notification Animations */
+@keyframes slideOut {
+  from {
+    width: 100%;
+    opacity: 1;
+  }
+  to {
+    width: 0%;
+    opacity: 0.5;
+  }
+}
 
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-progress {
+  animation: slideOut 10s linear forwards;
+}
+
+.animate-in {
+  animation: slideInFromRight 0.3s ease-out forwards;
+}
+
+.animate-out {
+  animation: slideOutToRight 0.3s ease-in forwards;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Padded Container Class - PRESERVED */
 .padded {
   padding-left: 1rem;
   padding-right: 1rem;
@@ -150,6 +209,7 @@ html, body {
   }
 }
 
+/* Gradient Classes - PRESERVED with hover states */
 .bg-gradient-primary {
   background: linear-gradient(135deg, #2563EB 0%, #0EA5E9 100%);
 }
@@ -164,6 +224,14 @@ html, body {
 
 .dark .bg-gradient-primary:hover {
   background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+}
+
+.bg-gradient-secondary {
+  background: linear-gradient(135deg, #0D9488 0%, #0F766E 100%);
+}
+
+.dark .bg-gradient-secondary {
+  background: linear-gradient(135deg, #0F766E 0%, #115E59 100%);
 }
 
 .text-gradient-primary {

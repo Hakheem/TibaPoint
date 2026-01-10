@@ -1,17 +1,18 @@
-import { Inter } from 'next/font/google'
-import './globals.css'
-import { ThemeProvider } from '@/components/general/theme-provider'
-import { ClerkProvider } from '@clerk/nextjs'
-import { Toaster } from 'sonner'
+import { Inter } from "next/font/google";
+import "./globals.css";
+import { ThemeProvider } from "@/components/general/theme-provider";
+import { ClerkProvider } from "@clerk/nextjs";
+import { Toaster } from "sonner";
+import { NotificationAlerts } from "@/components/notifications/NotificationAlert";
 
-const inter = Inter({ subsets: ['latin'] })
+const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: 'TibaPoint | Your Healthcare, Simplified',
+  title: "TibaPoint | Your Healthcare, Simplified",
   description:
-    'TibaPoint helps patients book verified healthcare professionals instantly.',
-}
-  
+    "TibaPoint helps patients book verified healthcare professionals instantly.",
+};
+
 export default function RootLayout({ children }) {
   return (
     <ClerkProvider>
@@ -24,12 +25,11 @@ export default function RootLayout({ children }) {
             disableTransitionOnChange
           >
             {children}
+            <NotificationAlerts />
           </ThemeProvider>
           <Toaster richColors />
         </body>
       </html>
     </ClerkProvider>
-  )
+  );
 }
-
-

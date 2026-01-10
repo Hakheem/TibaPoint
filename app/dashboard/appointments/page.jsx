@@ -21,7 +21,13 @@ import {
   Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
@@ -41,7 +47,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { getDoctorAppointments } from "@/actions/doctors";
-import { completeAppointment } from "@/actions/doctors"; 
+import { completeAppointment } from "@/actions/doctors";
 
 const AppointmentsPage = () => {
   const router = useRouter();
@@ -92,10 +98,11 @@ const AppointmentsPage = () => {
       return;
     }
 
-    const filtered = appointments.filter((apt) =>
-      apt.patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      apt.patient.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      apt.status.toLowerCase().includes(searchQuery.toLowerCase())
+    const filtered = appointments.filter(
+      (apt) =>
+        apt.patient.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        apt.patient.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        apt.status.toLowerCase().includes(searchQuery.toLowerCase())
     );
     setFilteredAppointments(filtered);
   };
@@ -186,7 +193,7 @@ const AppointmentsPage = () => {
     );
   }
 
-  return ( 
+  return (
     <div className="space-y-6 ">
       {/* Header */}
       <div className="flex flex-col gap-4">
@@ -235,7 +242,12 @@ const AppointmentsPage = () => {
               <div>
                 <p className="text-sm text-muted-foreground">Scheduled</p>
                 <p className="text-2xl font-bold">
-                  {appointments.filter((a) => a.status === "SCHEDULED" || a.status === "CONFIRMED").length}
+                  {
+                    appointments.filter(
+                      (a) =>
+                        a.status === "SCHEDULED" || a.status === "CONFIRMED"
+                    ).length
+                  }
                 </p>
               </div>
               <Clock className="h-8 w-8 text-green-500" />
@@ -275,7 +287,8 @@ const AppointmentsPage = () => {
         <CardHeader>
           <CardTitle>Appointments List</CardTitle>
           <CardDescription>
-            {filteredAppointments.length} appointment{filteredAppointments.length !== 1 ? "s" : ""} found
+            {filteredAppointments.length} appointment
+            {filteredAppointments.length !== 1 ? "s" : ""} found
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -295,7 +308,11 @@ const AppointmentsPage = () => {
                         <h3 className="font-semibold text-lg">
                           {appointment.patient.name}
                         </h3>
-                        <Badge className={`${getStatusColor(appointment.status)} flex items-center gap-1`}>
+                        <Badge
+                          className={`${getStatusColor(
+                            appointment.status
+                          )} flex items-center gap-1`}
+                        >
                           {getStatusIcon(appointment.status)}
                           {appointment.status}
                         </Badge>
@@ -303,7 +320,10 @@ const AppointmentsPage = () => {
                       <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 mt-2 text-sm text-muted-foreground">
                         <div className="flex items-center gap-1">
                           <Calendar className="h-4 w-4" />
-                          {format(new Date(appointment.startTime), "MMM d, yyyy")}
+                          {format(
+                            new Date(appointment.startTime),
+                            "MMM d, yyyy"
+                          )}
                         </div>
                         <div className="flex items-center gap-1">
                           <Clock className="h-4 w-4" />
@@ -328,7 +348,9 @@ const AppointmentsPage = () => {
                     <Button
                       variant="default"
                       size="sm"
-                      onClick={(e) => handleManageAppointment(appointment.id, e)}
+                      onClick={(e) =>
+                        handleManageAppointment(appointment.id, e)
+                      }
                       className="flex-1 sm:flex-initial"
                     >
                       <Settings className="h-4 w-4 mr-1" />
@@ -347,16 +369,17 @@ const AppointmentsPage = () => {
                     </Button>
 
                     {/* Quick Complete (from modal) */}
-                    {appointment.status !== "COMPLETED" && appointment.status !== "CANCELLED" && (
-                      <Button
-                        size="sm"
-                        variant="secondary"
-                        onClick={(e) => handleOpenComplete(appointment, e)}
-                        className="flex-1 sm:flex-initial"
-                      >
-                        Complete
-                      </Button>
-                    )}
+                    {appointment.status !== "COMPLETED" &&
+                      appointment.status !== "CANCELLED" && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          onClick={(e) => handleOpenComplete(appointment, e)}
+                          className="flex-1 sm:flex-initial"
+                        >
+                          Complete
+                        </Button>
+                      )}
                   </div>
                 </div>
               ))}
@@ -365,7 +388,9 @@ const AppointmentsPage = () => {
             <div className="text-center py-12">
               <AlertCircle className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
               <p className="text-muted-foreground">
-                {searchQuery ? "No appointments found matching your search" : "No appointments found"}
+                {searchQuery
+                  ? "No appointments found matching your search"
+                  : "No appointments found"}
               </p>
             </div>
           )}
@@ -390,12 +415,21 @@ const AppointmentsPage = () => {
                   Patient Information
                 </h3>
                 <div className="space-y-2 pl-6">
-                  <p><span className="font-medium">Name:</span> {selectedAppointment.patient.name}</p>
+                  <p>
+                    <span className="font-medium">Name:</span>{" "}
+                    {selectedAppointment.patient.name}
+                  </p>
                   {selectedAppointment.patient.email && (
-                    <p><span className="font-medium">Email:</span> {selectedAppointment.patient.email}</p>
+                    <p>
+                      <span className="font-medium">Email:</span>{" "}
+                      {selectedAppointment.patient.email}
+                    </p>
                   )}
                   {selectedAppointment.patient.phone && (
-                    <p><span className="font-medium">Phone:</span> {selectedAppointment.patient.phone}</p>
+                    <p>
+                      <span className="font-medium">Phone:</span>{" "}
+                      {selectedAppointment.patient.phone}
+                    </p>
                   )}
                 </div>
               </div>
@@ -407,13 +441,28 @@ const AppointmentsPage = () => {
                   Appointment Details
                 </h3>
                 <div className="space-y-2 pl-6">
-                  <p><span className="font-medium">Status:</span> 
-                    <Badge className={`ml-2 ${getStatusColor(selectedAppointment.status)}`}>
+                  <p>
+                    <span className="font-medium">Status:</span>
+                    <Badge
+                      className={`ml-2 ${getStatusColor(
+                        selectedAppointment.status
+                      )}`}
+                    >
                       {selectedAppointment.status}
                     </Badge>
                   </p>
-                  <p><span className="font-medium">Date:</span> {format(new Date(selectedAppointment.startTime), "MMMM d, yyyy")}</p>
-                  <p><span className="font-medium">Time:</span> {format(new Date(selectedAppointment.startTime), "h:mm a")} - {format(new Date(selectedAppointment.endTime), "h:mm a")}</p>
+                  <p>
+                    <span className="font-medium">Date:</span>{" "}
+                    {format(
+                      new Date(selectedAppointment.startTime),
+                      "MMMM d, yyyy"
+                    )}
+                  </p>
+                  <p>
+                    <span className="font-medium">Time:</span>{" "}
+                    {format(new Date(selectedAppointment.startTime), "h:mm a")}{" "}
+                    - {format(new Date(selectedAppointment.endTime), "h:mm a")}
+                  </p>
                   {selectedAppointment.patientDescription && (
                     <div>
                       <p className="font-medium mb-1">Patient Description:</p>
@@ -431,19 +480,25 @@ const AppointmentsPage = () => {
                   {selectedAppointment.diagnosis && (
                     <div>
                       <h3 className="font-semibold mb-3">Diagnosis</h3>
-                      <p className="text-sm bg-muted p-3 rounded">{selectedAppointment.diagnosis}</p>
+                      <p className="text-sm bg-muted p-3 rounded">
+                        {selectedAppointment.diagnosis}
+                      </p>
                     </div>
                   )}
                   {selectedAppointment.prescription && (
                     <div>
                       <h3 className="font-semibold mb-3">Prescription</h3>
-                      <p className="text-sm bg-muted p-3 rounded whitespace-pre-wrap">{selectedAppointment.prescription}</p>
+                      <p className="text-sm bg-muted p-3 rounded whitespace-pre-wrap">
+                        {selectedAppointment.prescription}
+                      </p>
                     </div>
                   )}
                   {selectedAppointment.notes && (
                     <div>
                       <h3 className="font-semibold mb-3">Notes</h3>
-                      <p className="text-sm bg-muted p-3 rounded">{selectedAppointment.notes}</p>
+                      <p className="text-sm bg-muted p-3 rounded">
+                        {selectedAppointment.notes}
+                      </p>
                     </div>
                   )}
                 </>
@@ -451,10 +506,12 @@ const AppointmentsPage = () => {
 
               {/* Link to full detail page */}
               <div className="pt-4 border-t">
-                <Button 
+                <Button
                   onClick={() => {
                     setIsDetailsOpen(false);
-                    router.push(`/dashboard/appointments/${selectedAppointment.id}`);
+                    router.push(
+                      `/dashboard/appointments/${selectedAppointment.id}`
+                    );
                   }}
                   className="w-full"
                 >
@@ -479,9 +536,14 @@ const AppointmentsPage = () => {
           {selectedAppointment && (
             <div className="space-y-4">
               <div className="bg-muted p-3 rounded">
-                <p className="font-medium">{selectedAppointment.patient.name}</p>
+                <p className="font-medium">
+                  {selectedAppointment.patient.name}
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  {format(new Date(selectedAppointment.startTime), "MMM d, yyyy 'at' h:mm a")}
+                  {format(
+                    new Date(selectedAppointment.startTime),
+                    "MMM d, yyyy 'at' h:mm a"
+                  )}
                 </p>
               </div>
 
@@ -492,7 +554,12 @@ const AppointmentsPage = () => {
                     id="diagnosis"
                     placeholder="Enter diagnosis..."
                     value={completeForm.diagnosis}
-                    onChange={(e) => setCompleteForm({ ...completeForm, diagnosis: e.target.value })}
+                    onChange={(e) =>
+                      setCompleteForm({
+                        ...completeForm,
+                        diagnosis: e.target.value,
+                      })
+                    }
                     rows={3}
                     className="mt-2"
                   />
@@ -504,7 +571,12 @@ const AppointmentsPage = () => {
                     id="prescription"
                     placeholder="Enter prescription details..."
                     value={completeForm.prescription}
-                    onChange={(e) => setCompleteForm({ ...completeForm, prescription: e.target.value })}
+                    onChange={(e) =>
+                      setCompleteForm({
+                        ...completeForm,
+                        prescription: e.target.value,
+                      })
+                    }
                     rows={4}
                     className="mt-2"
                   />
@@ -516,7 +588,12 @@ const AppointmentsPage = () => {
                     id="notes"
                     placeholder="Any additional notes..."
                     value={completeForm.notes}
-                    onChange={(e) => setCompleteForm({ ...completeForm, notes: e.target.value })}
+                    onChange={(e) =>
+                      setCompleteForm({
+                        ...completeForm,
+                        notes: e.target.value,
+                      })
+                    }
                     rows={3}
                     className="mt-2"
                   />
@@ -533,7 +610,11 @@ const AppointmentsPage = () => {
                 </Button>
                 <Button
                   onClick={handleCompleteAppointment}
-                  disabled={submitting || !completeForm.diagnosis || !completeForm.prescription}
+                  disabled={
+                    submitting ||
+                    !completeForm.diagnosis ||
+                    !completeForm.prescription
+                  }
                 >
                   {submitting ? (
                     <>
@@ -557,4 +638,3 @@ const AppointmentsPage = () => {
 };
 
 export default AppointmentsPage;
-

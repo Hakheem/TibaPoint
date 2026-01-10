@@ -4,9 +4,6 @@ import { db } from "@/lib/db";
 import { auth } from '@clerk/nextjs/server' 
 import { revalidatePath } from 'next/cache'
 
-// ============================================
-// PUBLIC DOCTOR FUNCTIONS (No Auth Required)
-// ============================================
 
 export async function getDoctorsBySpeciality(speciality) {
   try {
@@ -136,9 +133,6 @@ export async function getDoctorPublicProfile(doctorId) {
   }
 }
 
-// ============================================
-// DOCTOR FUNCTIONS (Auth Required)
-// ============================================
 
 export async function getDoctorProfile() {
   try {

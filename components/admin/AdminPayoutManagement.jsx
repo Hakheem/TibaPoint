@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, AlertCircle, CheckCircle, Eye, Download } from "lucide-react";
-import { 
+import {  
   markPayoutAsProcessing, 
   completePayoutRequest, 
   markPayoutAsFailed 
-} from "@/actions/earnings";
+} from "@/actions/payout";
 import { format } from "date-fns";
 
 export function AdminPayoutManagement({ payouts, onUpdate }) {

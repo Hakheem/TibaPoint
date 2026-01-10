@@ -207,7 +207,7 @@ export default function AppointmentDetailsPage() {
   const timeInfo = getTimeUntilAppointment(appointment.startTime);
 
   return (
-    <div className="container mx-auto padded py-20">
+    <div className="container mx-auto padded py-20 ">
       <div className="mb-8">
         <nav className="flex items-center text-sm text-muted-foreground mb-4">
           <a href="/appointments" className="hover:text-primary flex items-center gap-1">

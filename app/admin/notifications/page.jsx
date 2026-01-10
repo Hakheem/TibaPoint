@@ -46,6 +46,7 @@ import {
   sendNotificationToRole
 } from "@/actions/notifications";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 export default function AdminNotificationsPage() {
   const [notifications, setNotifications] = useState([]);
@@ -91,9 +92,13 @@ export default function AdminNotificationsPage() {
       if (result.success) {
         setNotifications(result.notifications || []);
         setStatistics(result.statistics || { total: 0, unread: 0, read: 0 });
+        toast.success("Notifications loaded successfully");
+      } else {
+        toast.error("Failed to load notifications");
       }
     } catch (error) {
       console.error("Failed to load notifications:", error);
+      toast.error("Failed to load notifications");
     } finally {
       setLoading(false);
     }
@@ -138,29 +143,43 @@ export default function AdminNotificationsPage() {
       setProcessing("all");
       const result = await markAllNotificationsAsRead();
       if (result.success) {
+        toast.success("All notifications marked as read");
         loadNotifications();
+      } else {
+        toast.error(result.error || "Failed to mark all as read");
       }
     } catch (error) {
       console.error("Failed to mark all as read:", error);
+      toast.error("Failed to mark all as read");
     } finally {
       setProcessing(null);
     }
   };
 
   const handleDeleteRead = async () => {
-    if (!confirm("Are you sure you want to delete all read notifications?")) return;
-
-    try {
-      setProcessing("delete-read");
-      const result = await deleteReadNotifications();
-      if (result.success) {
-        loadNotifications();
+    const promise = new Promise(async (resolve, reject) => {
+      try {
+        setProcessing("delete-read");
+        const result = await deleteReadNotifications();
+        if (result.success) {
+          loadNotifications();
+          resolve("Read notifications cleared successfully");
+        } else {
+          reject(new Error(result.error || "Failed to delete read notifications"));
+        }
+      } catch (error) {
+        console.error("Failed to delete read notifications:", error);
+        reject(new Error("Failed to delete read notifications"));
+      } finally {
+        setProcessing(null);
       }
-    } catch (error) {
-      console.error("Failed to delete read notifications:", error);
-    } finally {
-      setProcessing(null);
-    }
+    });
+
+    toast.promise(promise, {
+      loading: "Deleting read notifications...",
+      success: (message) => message,
+      error: (error) => error.message
+    });
   };
 
   const handleMarkAsRead = async (notificationId) => {
@@ -168,82 +187,104 @@ export default function AdminNotificationsPage() {
       setProcessing(notificationId);
       const result = await markNotificationAsRead(notificationId);
       if (result.success) {
+        toast.success("Notification marked as read");
         loadNotifications();
+      } else {
+        toast.error(result.error || "Failed to mark as read");
       }
     } catch (error) {
       console.error("Failed to mark as read:", error);
+      toast.error("Failed to mark as read");
     } finally {
       setProcessing(null);
     }
   };
 
-  const handleDeleteNotification = async (notificationId) => {
-    if (!confirm("Are you sure you want to delete this notification?")) return;
-
-    try {
-      setProcessing(notificationId);
-      const result = await deleteNotification(notificationId);
-      if (result.success) {
-        loadNotifications();
+  const handleDeleteNotification = async (notificationId, notificationTitle) => {
+    const promise = new Promise(async (resolve, reject) => {
+      try {
+        setProcessing(notificationId);
+        const result = await deleteNotification(notificationId);
+        if (result.success) {
+          loadNotifications();
+          resolve(`"${notificationTitle}" deleted successfully`);
+        } else {
+          reject(new Error(result.error || "Failed to delete notification"));
+        }
+      } catch (error) {
+        console.error("Failed to delete notification:", error);
+        reject(new Error("Failed to delete notification"));
+      } finally {
+        setProcessing(null);
       }
-    } catch (error) {
-      console.error("Failed to delete notification:", error);
-    } finally {
-      setProcessing(null);
-    }
+    });
+
+    toast.promise(promise, {
+      loading: "Deleting notification...",
+      success: (message) => message,
+      error: (error) => error.message
+    });
   };
 
   const handleSendNotification = async () => {
     if (!sendForm.title.trim() || !sendForm.message.trim()) {
-      alert("Please fill in both title and message");
+      toast.error("Please fill in both title and message");
       return;
     }
 
-    try {
-      setSending(true);
-      let result;
+    const promise = new Promise(async (resolve, reject) => {
+      try {
+        setSending(true);
+        let result;
 
-      if (sendForm.targetType === "ROLE") {
-        result = await sendNotificationToRole({
-          role: sendForm.role,
-          type: sendForm.type,
-          title: sendForm.title,
-          message: sendForm.message,
-          actionUrl: sendForm.actionUrl || null
-        });
-      } else {
-        // For sending to specific user
-        result = await sendNotificationToUser({
-          userId: sendForm.userId,
-          type: sendForm.type,
-          title: sendForm.title,
-          message: sendForm.message,
-          actionUrl: sendForm.actionUrl || null
-        });
-      }
+        if (sendForm.targetType === "ROLE") {
+          result = await sendNotificationToRole({
+            role: sendForm.role,
+            type: sendForm.type,
+            title: sendForm.title,
+            message: sendForm.message,
+            actionUrl: sendForm.actionUrl || null
+          });
+        } else {
+          // For sending to specific user
+          result = await sendNotificationToUser({
+            userId: sendForm.userId,
+            type: sendForm.type,
+            title: sendForm.title,
+            message: sendForm.message,
+            actionUrl: sendForm.actionUrl || null
+          });
+        }
 
-      if (result.success) {
-        alert(result.message);
-        setShowSendModal(false);
-        setSendForm({
-          targetType: "ROLE",
-          role: "DOCTOR",
-          userId: "",
-          type: "SYSTEM",
-          title: "",
-          message: "",
-          actionUrl: ""
-        });
-        loadNotifications();
-      } else {
-        alert(`Error: ${result.error}`);
+        if (result.success) {
+          setShowSendModal(false);
+          setSendForm({
+            targetType: "ROLE",
+            role: "DOCTOR",
+            userId: "",
+            type: "SYSTEM",
+            title: "",
+            message: "",
+            actionUrl: ""
+          });
+          loadNotifications();
+          resolve(result.message || "Notification sent successfully");
+        } else {
+          reject(new Error(result.error || "Failed to send notification"));
+        }
+      } catch (error) {
+        console.error("Failed to send notification:", error);
+        reject(new Error("Failed to send notification"));
+      } finally {
+        setSending(false);
       }
-    } catch (error) {
-      console.error("Failed to send notification:", error);
-      alert("Failed to send notification");
-    } finally {
-      setSending(false);
-    }
+    });
+
+    toast.promise(promise, {
+      loading: "Sending notification...",
+      success: (message) => message,
+      error: (error) => error.message
+    });
   };
 
   const getNotificationIcon = (type) => {
@@ -411,7 +452,7 @@ export default function AdminNotificationsPage() {
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
+                <Input
                   type="text"
                   placeholder="Search by user, title, or message..."
                   className="pl-10 pr-4 py-2 border rounded-md w-full sm:w-64"
@@ -530,7 +571,7 @@ export default function AdminNotificationsPage() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleDeleteNotification(notification.id)}
+                                  onClick={() => handleDeleteNotification(notification.id, notification.title)}
                                   disabled={processing === notification.id}
                                 >
                                   <Trash2 className="h-4 w-4" />

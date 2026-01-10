@@ -40,3 +40,4 @@ export default function DoctorsLayout({ children }) {
     </div>
   )
 }
+

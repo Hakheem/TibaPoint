@@ -1,4 +1,3 @@
-// app/doctor/[id]/page.jsx
 import { notFound } from "next/navigation";
 import {
   Calendar,
@@ -56,7 +55,7 @@ export async function generateMetadata({ params }) {
     };
   }
 }
-
+ 
 const ReviewCard = ({ review }) => {
   return (
     <Card>
@@ -117,9 +116,9 @@ export default async function DoctorProfilePage({ params }) {
   const canBook = currentUser?.role === "PATIENT" && currentUser?.credits >= 2;
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen ">
       {/* Hero Section */}
-      <div className="bg-linear-to-b from-primary/5 to-transparent py-8 md:py-12">
+      <div className="bg-linear-to-b from-primary/5 to-transparent pt-20 md:pt-24 pb-12">
         <div className="container mx-auto px-4 max-w-6xl">
           <div className="flex flex-col lg:flex-row gap-8 lg:gap-12">
             {/* Doctor Info */}
@@ -156,7 +155,7 @@ export default async function DoctorProfilePage({ params }) {
                         <div className="flex items-center gap-2">
                           <Award className="h-5 w-5 text-blue-500" />
                           <span>
-                            {doctor.experience || 5}+ years experience
+                            {doctor.experience || 2}+ years experience
                           </span>
                         </div>
 
@@ -169,31 +168,6 @@ export default async function DoctorProfilePage({ params }) {
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-3">
-                      {canBook ? (
-                        <Button size="lg" className="w-full md:w-auto" asChild>
-                          <a href={`/book/${doctor.id}`}>
-                            <Video className="h-5 w-5 mr-2" />
-                            Book 30-Min Consultation
-                          </a>
-                        </Button>
-                      ) : currentUser ? (
-                        <Button size="lg" className="w-full md:w-auto" asChild>
-                          <a
-                            href={`/book/${doctor.id}`}
-                            className="opacity-70 cursor-not-allowed"
-                          >
-                            Need 2 Credits to Book
-                          </a>
-                        </Button>
-                      ) : (
-                        <Button size="lg" className="w-full md:w-auto" asChild>
-                          <a href="/sign-in?redirect_url=/book-appointment">
-                            Sign In to Book
-                          </a>
-                        </Button>
-                      )}
-                    </div>
                   </div>
 
                   <div className="mt-8">
@@ -205,7 +179,7 @@ export default async function DoctorProfilePage({ params }) {
                         `${doctor.name} is a certified ${
                           doctor.speciality
                         } specialist with ${
-                          doctor.experience || "5"
+                          doctor.experience || "2"
                         }+ years of experience. Dedicated to providing exceptional patient care through virtual consultations.`}
                     </p>
                   </div>
@@ -238,7 +212,7 @@ export default async function DoctorProfilePage({ params }) {
                       <div>
                         <div className="font-medium">Consultation Duration</div>
                         <div className="text-sm text-muted-foreground">
-                          30 minutes
+                          30 minutes(max 1 hour)
                         </div>
                       </div>
                     </div>
@@ -248,7 +222,7 @@ export default async function DoctorProfilePage({ params }) {
                       <div>
                         <div className="font-medium">Languages</div>
                         <div className="text-sm text-muted-foreground">
-                          English, Swahili
+                          English, Swahili 
                         </div>
                       </div>
                     </div>
@@ -264,7 +238,7 @@ export default async function DoctorProfilePage({ params }) {
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      2 credits = 1 consultation (30 minutes)
+                      2 credits = 1 consultation
                     </p>
                   </div>
 
@@ -294,7 +268,7 @@ export default async function DoctorProfilePage({ params }) {
       </div>
 
       {/* Main Content */}
-      <div className="container mx-auto px-4 max-w-6xl py-8 md:py-12">
+      <div className="container mx-auto px-4 max-w-6xl py-8 md:py-20">
         <Tabs defaultValue="reviews" className="space-y-8">
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="reviews">
@@ -355,7 +329,7 @@ export default async function DoctorProfilePage({ params }) {
                         <span className="text-sm font-semibold">1</span>
                       </div>
                       <span>
-                        Book 30-minute appointment by selecting date and time
+                        Book an appointment by selecting date and time
                       </span>
                     </li>
                     <li className="flex items-start gap-3">
@@ -371,7 +345,7 @@ export default async function DoctorProfilePage({ params }) {
                         <span className="text-sm font-semibold">3</span>
                       </div>
                       <span>
-                        Join 30-minute video consultation at scheduled time
+                        Join video consultation at scheduled time
                       </span>
                     </li>
                     <li className="flex items-start gap-3">

@@ -1,16 +1,63 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { auth } from '@clerk/nextjs/server';
-import { revalidatePath } from 'next/cache';
+import { auth } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
+import NotificationService from "@/lib/services/notificationService";
 
-// ============================================
-// NOTIFICATION FUNCTIONS
-// ============================================
-
+// NOTIFICATION PREFERENCE HELPER
 /**
- * Get all notifications for the current user
+ * Determine notification preferences (sound and popup) based on user role and notification type
+ * @param {string} role - User role (PATIENT, DOCTOR, ADMIN)
+ * @param {string} type - Notification type
+ * @returns {Object} - { sound: boolean, showPopup: boolean }
  */
+function getNotificationPreferences(role, type) {
+  // Default preferences
+  const defaultPrefs = { sound: true, showPopup: true };
+
+  // PATIENT role preferences
+  if (role === "PATIENT") {
+    const patientPrefs = {
+      APPOINTMENT: { sound: true, showPopup: true }, // High priority
+      REMINDER: { sound: true, showPopup: true }, // High priority
+      REFUND: { sound: true, showPopup: true }, // High priority (money related)
+      CREDIT_EXPIRY: { sound: false, showPopup: true }, // Warning but less urgent
+      SYSTEM: { sound: false, showPopup: false }, // Low priority
+    };
+    return patientPrefs[type] || defaultPrefs;
+  }
+
+  // DOCTOR role preferences
+  if (role === "DOCTOR") {
+    const doctorPrefs = {
+      APPOINTMENT: { sound: true, showPopup: true }, // High priority
+      REMINDER: { sound: true, showPopup: true }, // High priority
+      REVIEW: { sound: true, showPopup: true }, // Important for reputation
+      PENALTY: { sound: true, showPopup: true }, // Very important (urgent)
+      VERIFICATION: { sound: false, showPopup: true }, // Admin related
+      SYSTEM: { sound: false, showPopup: false }, // Low priority
+    };
+    return doctorPrefs[type] || defaultPrefs;
+  }
+
+  // ADMIN role preferences
+  if (role === "ADMIN") {
+    const adminPrefs = {
+      APPOINTMENT: { sound: false, showPopup: false }, // Dashboard monitoring
+      REMINDER: { sound: false, showPopup: false }, // Low priority
+      REVIEW: { sound: false, showPopup: false }, // Dashboard monitoring
+      PENALTY: { sound: true, showPopup: true }, // Critical
+      VERIFICATION: { sound: true, showPopup: true }, // Critical (admin action needed)
+      PAYOUT: { sound: true, showPopup: true }, // Financial (important)
+      SYSTEM: { sound: false, showPopup: false }, // Dashboard monitoring
+    };
+    return adminPrefs[type] || defaultPrefs;
+  }
+
+  return defaultPrefs;
+}
+
 export async function getUserNotifications(filters = {}) {
   try {
     const { userId } = await auth();
@@ -43,7 +90,7 @@ export async function getUserNotifications(filters = {}) {
     const notifications = await db.notification.findMany({
       where: whereClause,
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
       take: filters.limit || 50,
     });
@@ -67,9 +114,6 @@ export async function getUserNotifications(filters = {}) {
   }
 }
 
-/**
- * Get notifications by role-specific filters
- */
 export async function getNotificationsByRole(filters = {}) {
   try {
     const { userId } = await auth();
@@ -100,7 +144,14 @@ export async function getNotificationsByRole(filters = {}) {
     } else if (user.role === "DOCTOR") {
       // Doctors see: APPOINTMENT, REMINDER, REVIEW, PENALTY, VERIFICATION, SYSTEM
       whereClause.type = {
-        in: ["APPOINTMENT", "REMINDER", "REVIEW", "PENALTY", "VERIFICATION", "SYSTEM"],
+        in: [
+          "APPOINTMENT",
+          "REMINDER",
+          "REVIEW",
+          "PENALTY",
+          "VERIFICATION",
+          "SYSTEM",
+        ],
       };
     } else if (user.role === "ADMIN") {
       // Admins see everything
@@ -118,14 +169,14 @@ export async function getNotificationsByRole(filters = {}) {
     const notifications = await db.notification.findMany({
       where: whereClause,
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
       take: filters.limit || 50,
     });
 
     // Get unread count by type
     const unreadByType = await db.notification.groupBy({
-      by: ['type'],
+      by: ["type"],
       where: {
         userId: user.id,
         isRead: false,
@@ -157,9 +208,6 @@ export async function getNotificationsByRole(filters = {}) {
   }
 }
 
-/**
- * Mark a notification as read
- */
 export async function markNotificationAsRead(notificationId) {
   try {
     const { userId } = await auth();
@@ -170,7 +218,7 @@ export async function markNotificationAsRead(notificationId) {
 
     const user = await db.user.findUnique({
       where: { clerkUserId: userId },
-      select: { id: true },
+      select: { id: true, role: true },
     });
 
     if (!user) {
@@ -186,6 +234,7 @@ export async function markNotificationAsRead(notificationId) {
       return { success: false, error: "Notification not found" };
     }
 
+    // Ensure the notification belongs to the authenticated user
     if (notification.userId !== user.id) {
       return { success: false, error: "Unauthorized" };
     }
@@ -199,7 +248,7 @@ export async function markNotificationAsRead(notificationId) {
       },
     });
 
-    revalidatePath('/dashboard/notifications');
+    revalidatePath("/dashboard/notifications");
 
     return {
       success: true,
@@ -211,9 +260,6 @@ export async function markNotificationAsRead(notificationId) {
   }
 }
 
-/**
- * Mark all notifications as read
- */
 export async function markAllNotificationsAsRead() {
   try {
     const { userId } = await auth();
@@ -242,7 +288,7 @@ export async function markAllNotificationsAsRead() {
       },
     });
 
-    revalidatePath('/dashboard/notifications');
+    revalidatePath("/dashboard/notifications");
 
     return {
       success: true,
@@ -255,9 +301,6 @@ export async function markAllNotificationsAsRead() {
   }
 }
 
-/**
- * Delete a notification
- */
 export async function deleteNotification(notificationId) {
   try {
     const { userId } = await auth();
@@ -293,7 +336,7 @@ export async function deleteNotification(notificationId) {
       where: { id: notificationId },
     });
 
-    revalidatePath('/dashboard/notifications');
+    revalidatePath("/dashboard/notifications");
 
     return {
       success: true,
@@ -305,9 +348,6 @@ export async function deleteNotification(notificationId) {
   }
 }
 
-/**
- * Delete all read notifications
- */
 export async function deleteReadNotifications() {
   try {
     const { userId } = await auth();
@@ -332,7 +372,7 @@ export async function deleteReadNotifications() {
       },
     });
 
-    revalidatePath('/dashboard/notifications');
+    revalidatePath("/dashboard/notifications");
 
     return {
       success: true,
@@ -345,9 +385,6 @@ export async function deleteReadNotifications() {
   }
 }
 
-/**
- * Get notification statistics
- */
 export async function getNotificationStatistics() {
   try {
     const { userId } = await auth();
@@ -367,7 +404,7 @@ export async function getNotificationStatistics() {
 
     // Get counts by type
     const byType = await db.notification.groupBy({
-      by: ['type'],
+      by: ["type"],
       where: {
         userId: user.id,
       },
@@ -426,10 +463,6 @@ export async function getNotificationStatistics() {
 // ============================================
 // ADMIN NOTIFICATION FUNCTIONS
 // ============================================
-
-/**
- * Send notification to specific user (Admin only)
- */
 export async function sendNotificationToUser(data) {
   try {
     const { userId } = await auth();
@@ -481,9 +514,6 @@ export async function sendNotificationToUser(data) {
   }
 }
 
-/**
- * Send notification to multiple users (Admin only)
- */
 export async function sendBulkNotifications(data) {
   try {
     const { userId } = await auth();
@@ -505,7 +535,7 @@ export async function sendBulkNotifications(data) {
 
     // Create notifications for all users
     const notifications = await Promise.all(
-      data.userIds.map(userId =>
+      data.userIds.map((userId) =>
         db.notification.create({
           data: {
             userId,
@@ -529,9 +559,6 @@ export async function sendBulkNotifications(data) {
   }
 }
 
-/**
- * Send notification to all users of a specific role (Admin only)
- */
 export async function sendNotificationToRole(data) {
   try {
     const { userId } = await auth();
@@ -551,15 +578,22 @@ export async function sendNotificationToRole(data) {
       return { success: false, error: "Unauthorized" };
     }
 
-    // Get all users with the specified role
-    const users = await db.user.findMany({
-      where: { role: data.role },
-      select: { id: true },
-    });
+    // Get all users with the specified role. If role is 'ALL', don't filter by role
+    let users;
+    if (data.role === "ALL") {
+      users = await db.user.findMany({
+        select: { id: true },
+      });
+    } else {
+      users = await db.user.findMany({
+        where: { role: data.role },
+        select: { id: true },
+      });
+    }
 
     // Create notifications for all users
     const notifications = await Promise.all(
-      users.map(user =>
+      users.map((user) =>
         db.notification.create({
           data: {
             userId: user.id,
@@ -583,9 +617,6 @@ export async function sendNotificationToRole(data) {
   }
 }
 
-/**
- * Get all notifications for admin dashboard
- */
 export async function getAllNotificationsAdmin(filters = {}) {
   try {
     const { userId } = await auth();
@@ -642,7 +673,7 @@ export async function getAllNotificationsAdmin(filters = {}) {
         },
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
       take: filters.limit || 100,
     });
@@ -665,5 +696,62 @@ export async function getAllNotificationsAdmin(filters = {}) {
   } catch (error) {
     console.error("Failed to fetch all notifications:", error);
     return { success: false, error: "Failed to fetch notifications" };
+  }
+}
+
+export async function createAndSendNotification(data) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    // Create notification in database
+    const notification = await db.notification.create({
+      data: {
+        userId: data.userId,
+        type: data.type,
+        title: data.title,
+        message: data.message,
+        actionUrl: data.actionUrl || null,
+        relatedId: data.relatedId || null,
+      },
+    });
+
+    // Get user role to determine notification preferences
+    const recipient = await db.user.findUnique({
+      where: { id: data.userId },
+      select: { role: true },
+    });
+
+    // Determine sound and popup settings based on role and notification type
+    const notificationSettings = getNotificationPreferences(
+      recipient?.role,
+      data.type
+    );
+
+    // Send via SSE
+    await NotificationService.sendToUser(data.userId, {
+      type: "NEW_NOTIFICATION",
+      notification: {
+        id: notification.id,
+        title: notification.title,
+        message: notification.message,
+        type: notification.type,
+        actionUrl: notification.actionUrl,
+      },
+      sound: notificationSettings.sound,
+      showPopup: notificationSettings.showPopup,
+    });
+
+    return {
+      success: true,
+      message: "Notification sent",
+      notification,
+    };
+  } catch (error) {
+    console.error("Failed to send notification:", error);
+    return { success: false, error: "Failed to send notification" };
   }
 }

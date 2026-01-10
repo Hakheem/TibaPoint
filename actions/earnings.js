@@ -368,7 +368,7 @@ export async function processDoctorPayouts() {
     return { success: false, error: "Failed to process payouts" };
   }
 }
-
+ 
 
 // EARNINGS STATISTICS
 export async function getEarningsStatistics(period = "month") {

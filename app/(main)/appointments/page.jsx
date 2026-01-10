@@ -9,11 +9,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getPatientAppointments } from '@/actions/appointments'
 
 export const metadata = {
-  title: 'My Appointments | MediPass',
+  title: 'My Appointments | Tibapoint',
   description: 'View and manage your upcoming and past medical appointments.',
 }
  
-// Status colors configuration
 const statusColors = {
   SCHEDULED: 'bg-blue-100 text-blue-800',
   CONFIRMED: 'bg-green-100 text-green-800',
@@ -56,7 +55,7 @@ export default async function AppointmentsPage() {
       const doctor = appointment.doctor
       
       return (
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-md transition-shadow  ">
           <CardHeader>
             <div className="flex justify-between items-start">
               <div className="flex items-center gap-3">
@@ -155,7 +154,7 @@ export default async function AppointmentsPage() {
     }
 
     return (
-      <div className="container mx-auto padded py-20">
+      <div className="container mx-auto padded py-20  ">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">My Appointments</h1>

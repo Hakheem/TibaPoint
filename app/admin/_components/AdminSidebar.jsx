@@ -76,22 +76,7 @@ const AdminSidebar = ({ user }) => {
       href: '/admin/penalties',
       icon: AlertCircle,
     },
-    {
-      name: 'Credit Packages',
-      href: '/admin/packages',
-      icon: Package,
-    },
-    {
-      name: 'Analytics & Reports',
-      href: '/admin/analytics',
-      icon: BarChart3,
-      subItems: [
-        { name: 'Overview', href: '/admin/analytics' },
-        { name: 'Revenue', href: '/admin/analytics/revenue' },
-        { name: 'User Growth', href: '/admin/analytics/growth' },
-        { name: 'Appointment Stats', href: '/admin/analytics/appointments' },
-      ],
-    },
+   
     {
       name: 'Notifications',
       href: '/admin/notifications',
@@ -107,11 +92,7 @@ const AdminSidebar = ({ user }) => {
         { name: 'Settings', href: '/admin/system/settings' },
       ],
     },
-    {
-      name: 'Support',
-      href: '/admin/support',
-      icon: MessageSquare,
-    },
+   
   ]
 
   const isActive = (href) => {
@@ -260,45 +241,8 @@ const AdminSidebar = ({ user }) => {
         {/* Bottom Section - Fixed at bottom */}
         <div className="border-t border-gray-200 dark:border-gray-800 p-4 bg-gray-50 dark:bg-gray-900/50">
           <div className="space-y-3">
-            {/* Dynamic Notification Badge */}
             <NotificationBadge />
 
-            {/* Quick Actions */}
-            <div className="p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-              <p className="text-xs font-medium text-gray-900 dark:text-white mb-2">Quick Actions</p>
-              <div className="space-y-2">
-                <Link
-                  href="/admin/doctors/pending"
-                  className="flex items-center justify-between text-sm hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <span className="text-gray-700 dark:text-gray-300">Verify Doctors</span>
-                  <span className="h-5 w-5 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 text-xs flex items-center justify-center">
-                    3
-                  </span>
-                </Link>
-                <Link
-                  href="/admin/support"
-                  className="flex items-center justify-between text-sm hover:bg-gray-50 dark:hover:bg-gray-700 p-1 rounded"
-                  onClick={() => setIsOpen(false)}
-                >
-                  <span className="text-gray-700 dark:text-gray-300">Support Tickets</span>
-                  <span className="h-5 w-5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs flex items-center justify-center">
-                    5
-                  </span>
-                </Link>
-              </div>
-            </div>
-
-            {/* Support Link */}
-            <Link
-              href="/admin/support"
-              className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
-              onClick={() => setIsOpen(false)}
-            >
-              <HelpCircle size={20} />
-              <span className="text-sm font-medium">Help & Support</span>
-            </Link>
           </div>
         </div>
       </aside>

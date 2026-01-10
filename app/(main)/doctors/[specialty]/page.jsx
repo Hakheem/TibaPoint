@@ -33,13 +33,13 @@ import {
 // Generate static paths for all specialties during build
 export async function generateStaticParams() {
   return SPECIALITIES.map((specialty) => ({
-    speciality: generateSpecialtySlug(specialty.value),
+    specialty: generateSpecialtySlug(specialty.value),
   }));
 }
 
 export async function generateMetadata({ params }) {
   const resolvedParams = await params;
-  const specialtySlug = resolvedParams?.speciality;
+  const specialtySlug = resolvedParams?.specialty;
 
   if (!specialtySlug) {
     return {
@@ -161,7 +161,7 @@ const DoctorCard = ({ doctor }) => {
 
 const SpecialtyPage = async ({ params }) => {
   const resolvedParams = await params;
-  const specialtySlug = resolvedParams?.speciality;
+  const specialtySlug = resolvedParams?.specialty;
 
   console.log("Specialty slug received:", specialtySlug);
 

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/general/theme-toggle";
 import { Button } from "../ui/button";
-import { Menu, User, Calendar, Stethoscope, ShieldCheck, CreditCard } from "lucide-react";
+import { Menu, User, Calendar, Stethoscope, ShieldCheck, CreditCard, Bell } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -19,6 +19,7 @@ import {
   SignInButton,
   UserButton,
 } from "@clerk/nextjs"
+import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const Navbar = ({ dbUser }) => {
   const [scrolled, setScrolled] = useState(false);
@@ -35,7 +36,6 @@ const Navbar = ({ dbUser }) => {
       setScrolled(window.scrollY > 10);
     };
     
-    // Only run on client
     onScroll(); // Initial check
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
@@ -142,7 +142,9 @@ const Navbar = ({ dbUser }) => {
                 {roleConfig.text}
               </Button>
             </Link>
-            
+
+             <NotificationBell />
+
             <UserButton />
           </SignedIn>
         </div>
@@ -160,9 +162,14 @@ const Navbar = ({ dbUser }) => {
           </SignedOut>
 
           <SignedIn>
+            
+            <div className='scale-90' >
+            <NotificationBell />
+            </div>
+
             {/* Mobile credits display */}
             {role === "PATIENT" && (
-              <Link href="/credits" className="mr-2">
+              <Link href="/credits" className="">
                 <Button variant="ghost" size="sm" className="gap-1 px-2">
                   <CreditCard className="h-3.5 w-3.5" />
                   <span className="font-medium">{consultations}</span>
@@ -193,7 +200,7 @@ const Navbar = ({ dbUser }) => {
                   </SheetTitle>
                 </SheetHeader>
 
-                <div className="mt-6 flex flex-col gap-4">
+                <div className="mt-6 px-4 flex flex-col gap-4">
                   <Link href="/" className="hover:text-primary transition-colors py-2">
                     Home
                   </Link>
@@ -208,6 +215,15 @@ const Navbar = ({ dbUser }) => {
                       <span>{consultations} consultations available</span>
                     </Link>
                   )}
+
+                  {/* Add Notifications link to mobile menu */}
+                  <Link 
+                    href="/notifications" 
+                    className="flex items-center gap-2 hover:text-primary transition-colors py-2"
+                  >
+                    <Bell className="h-4 w-4" />
+                    Notifications
+                  </Link>
 
                   <Link 
                     href={roleConfig.href} 
