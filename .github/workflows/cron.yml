@@ -1,0 +1,32 @@
+name: Scheduled Cron Calls
+
+on:
+  schedule:
+    # Hourly: expire-credits
+    - cron: "0 * * * *"
+    # Wednesdays and Sundays at 03:00 UTC: update doctors balance
+    - cron: "0 3 * * 0"
+    - cron: "0 3 * * 3"
+
+jobs:
+  expire-credits:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && (github.event.schedule == '0 * * * *')
+    steps:
+      - name: Call expire-credits endpoint
+        env:
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -s -X GET -H "Authorization: Bearer $CRON_SECRET" "$CRON_BASE_URL/api/cron-jobs/expire-credits" | jq -r .
+
+  update-doctors-balance:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule' && (github.event.schedule == '0 3 * * 0' || github.event.schedule == '0 3 * * 3')
+    steps:
+      - name: Call update-doctors-balance endpoint
+        env:
+          CRON_BASE_URL: ${{ secrets.CRON_BASE_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          curl -s -X GET -H "Authorization: Bearer $CRON_SECRET" "$CRON_BASE_URL/api/cron-jobs/update-doctors-balance" | jq -r .

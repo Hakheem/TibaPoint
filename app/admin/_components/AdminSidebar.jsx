@@ -82,16 +82,6 @@ const AdminSidebar = ({ user }) => {
       href: '/admin/notifications',
       icon: Bell,
     },
-    {
-      name: 'System',
-      href: '/admin/system',
-      icon: Settings,
-      subItems: [
-        { name: 'Configuration', href: '/admin/system/config' },
-        { name: 'Logs', href: '/admin/system/logs' },
-        { name: 'Settings', href: '/admin/system/settings' },
-      ],
-    },
    
   ]
 
