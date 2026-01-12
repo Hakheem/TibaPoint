@@ -16,8 +16,8 @@ import {
 } from "@/actions/family-members";
 import {
   Table,
-  TableBody,
-  TableCell,
+  TableBody, 
+  TableCell, 
   TableHead,
   TableHeader,
   TableRow,

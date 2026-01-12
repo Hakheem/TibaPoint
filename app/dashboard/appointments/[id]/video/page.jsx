@@ -186,7 +186,7 @@ export default function DoctorVideoCallPage() {
         </div>
         
         {/* Video Call Component */}
-        <div className="h-[calc(100vh-180px)]">
+        <div className="h-[90vh]">
           <VideoCall
             channelName={config.channelName}
             token={token}
@@ -211,7 +211,7 @@ export default function DoctorVideoCallPage() {
             </AlertDescription>
           </Alert>
         </div>
-      </div>
+      </div> 
     </div>
   );
 }

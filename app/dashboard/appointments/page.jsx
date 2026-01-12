@@ -79,8 +79,32 @@ const AppointmentsPage = () => {
       setLoading(true);
       const result = await getDoctorAppointments(filter);
       if (result.success && result.appointments) {
-        setAppointments(result.appointments);
-        setFilteredAppointments(result.appointments);
+        const sortedAppointments = result.appointments.sort((a, b) => {
+          const statusOrder = {
+            IN_PROGRESS: 0,
+            CONFIRMED: 1,
+            SCHEDULED: 2,
+            COMPLETED: 3,
+            CANCELLED: 4,
+            NO_SHOW: 5,
+          };
+
+          const orderA = statusOrder[a.status] ?? 99;
+          const orderB = statusOrder[b.status] ?? 99;
+
+          if (orderA !== orderB) return orderA - orderB;
+
+          // For upcoming appointments (0-2), sort by date ascending (soonest first)
+          if (orderA <= 2) {
+            return new Date(a.startTime) - new Date(b.startTime);
+          }
+
+          // For past appointments (3+), sort by date descending (newest first)
+          return new Date(b.startTime) - new Date(a.startTime);
+        });
+
+        setAppointments(sortedAppointments);
+        setFilteredAppointments(sortedAppointments);
       } else if (result.error) {
         toast.error(result.error);
       }
@@ -105,7 +129,7 @@ const AppointmentsPage = () => {
         apt.status.toLowerCase().includes(searchQuery.toLowerCase())
     );
     setFilteredAppointments(filtered);
-  };
+  }; 
 
   const handleViewDetails = (appointment) => {
     setSelectedAppointment(appointment);

@@ -1,8 +1,8 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import React, { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   Home,
   Calendar,
@@ -18,66 +18,61 @@ import {
   CalendarClock,
   Settings,
   Shield,
-  FileText
-} from 'lucide-react'
-import { NotificationBadge } from '@/components/notifications/NotificationBadge'
+  FileText,
+} from "lucide-react";
+import { NotificationBadge } from "@/components/notifications/NotificationBadge";
 
 const DoctorSidebar = ({ user }) => {
-  const [isOpen, setIsOpen] = useState(false)
-  const [expandedItems, setExpandedItems] = useState({})
-  const pathname = usePathname()
+  const [isOpen, setIsOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState({});
+  const pathname = usePathname();
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Appointments', href: '/dashboard/appointments', icon: Calendar },
-    { name: 'Patients', href: '/dashboard/patients', icon: Users },
-    { name: 'Availability', href: '/dashboard/availability', icon: CalendarClock },
-    { name: 'Earnings', href: '/dashboard/earnings', icon: CreditCard },
-    // { name: 'Messages', href: '/dashboard/messages', icon: MessageSquare },
-    { name: 'Profile', href: '/dashboard/profile', icon: User },
-    { 
-      name: 'Notifications', 
-      href: '/dashboard/notifications', 
+    { name: "Dashboard", href: "/dashboard", icon: Home },
+    { name: "Appointments", href: "/dashboard/appointments", icon: Calendar },
+    { name: "Patients", href: "/dashboard/patients", icon: Users },
+    {
+      name: "Availability",
+      href: "/dashboard/availability",
+      icon: CalendarClock,
+    },
+    { name: "Earnings", href: "/dashboard/earnings", icon: CreditCard },
+    {
+      name: "Notifications",
+      href: "/dashboard/notifications",
       icon: Bell,
     },
-    { 
-      name: 'Settings', 
-      href: '/dashboard/settings', 
-      icon: Settings,
-      subItems: [
-        { name: 'General Settings', href: '/dashboard/settings' },
-        { name: 'Account Security', href: '/dashboard/settings/security' },
-      ]
-    },
-  ]
+  ];
 
   const isActive = (href) => {
-    if (href === '/dashboard') {
-      return pathname === '/dashboard'
+    if (href === "/dashboard") {
+      return pathname === "/dashboard";
     }
-    return pathname.startsWith(href)
-  }
+    return pathname.startsWith(href);
+  };
 
   const isSubItemActive = (href) => {
-    return pathname === href
-  }
+    return pathname === href;
+  };
 
   const toggleExpanded = (itemName) => {
-    setExpandedItems(prev => ({
+    setExpandedItems((prev) => ({
       ...prev,
-      [itemName]: !prev[itemName]
-    }))
-  }
+      [itemName]: !prev[itemName],
+    }));
+  };
 
   const isExpanded = (itemName) => {
     // Auto-expand if subitem is active
-    if (navigation.some(item => 
-      item.subItems?.some(sub => sub.href === pathname)
-    )) {
-      return true
+    if (
+      navigation.some((item) =>
+        item.subItems?.some((sub) => sub.href === pathname)
+      )
+    ) {
+      return true;
     }
-    return expandedItems[itemName] || false
-  }
+    return expandedItems[itemName] || false;
+  };
 
   return (
     <>
@@ -88,23 +83,47 @@ const DoctorSidebar = ({ user }) => {
           className="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-md border border-gray-200 dark:border-gray-700"
         >
           {isOpen ? (
-            <svg className="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+            <svg
+              className="w-6 h-6 text-gray-700 dark:text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           ) : (
-            <svg className="w-6 h-6 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+            <svg
+              className="w-6 h-6 text-gray-700 dark:text-gray-300"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth="2"
+                d="M4 6h16M4 12h16M4 18h16"
+              />
             </svg>
           )}
         </button>
       </div>
 
       {/* Sidebar */}
-      <aside className={`
+      <aside
+        className={`
         fixed inset-y-0 left-0 z-40 w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-lg transform transition-transform duration-300 ease-in-out
-        lg:relative lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        lg:relative lg:translate-x-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }
         flex flex-col h-screen
-      `}>
+      `}
+      >
         {/* Profile Section */}
         <div className="p-6 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center space-x-3">
@@ -116,17 +135,21 @@ const DoctorSidebar = ({ user }) => {
                   className="w-12 h-12 rounded-full"
                 />
               ) : (
-                <span className="text-lg">
-                  {user.name?.charAt(0) || 'D'}
-                </span>
+                <span className="text-lg">{user.name?.charAt(0) || "D"}</span>
               )}
             </div>
             <div>
-              <h2 className="font-semibold text-gray-900 dark:text-white">Dr. {user.name}</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300">{user.speciality}</p>
+              <h2 className="font-semibold text-gray-900 dark:text-white">
+                Dr. {user.name}
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-300">
+                {user.speciality}
+              </p>
               <div className="flex items-center mt-1">
                 <div className="w-2 h-2 rounded-full bg-green-500 mr-2"></div>
-                <span className="text-xs text-gray-500 dark:text-gray-400">Online</span>
+                <span className="text-xs text-gray-500 dark:text-gray-400">
+                  Online
+                </span>
               </div>
             </div>
           </div>
@@ -136,10 +159,10 @@ const DoctorSidebar = ({ user }) => {
         <nav className="flex-1 overflow-y-auto py-4">
           <div className="space-y-1 px-4">
             {navigation.map((item) => {
-              const Icon = item.icon
-              const active = isActive(item.href)
-              const expanded = isExpanded(item.name)
-              
+              const Icon = item.icon;
+              const active = isActive(item.href);
+              const expanded = isExpanded(item.name);
+
               return (
                 <div key={item.name} className="space-y-1">
                   <div className="flex flex-col">
@@ -149,20 +172,23 @@ const DoctorSidebar = ({ user }) => {
                         onClick={() => setIsOpen(false)}
                         className={`
                           flex items-center flex-1 space-x-3 px-3 py-2.5 rounded-lg transition-colors
-                          ${active 
-                            ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800' 
-                            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white'
+                          ${
+                            active
+                              ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800"
+                              : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white"
                           }
                         `}
                       >
                         <Icon size={20} />
-                        <span className="flex-1 text-sm font-medium">{item.name}</span>
+                        <span className="flex-1 text-sm font-medium">
+                          {item.name}
+                        </span>
                         {item.subItems && (
                           <button
                             onClick={(e) => {
-                              e.preventDefault()
-                              e.stopPropagation()
-                              toggleExpanded(item.name)
+                              e.preventDefault();
+                              e.stopPropagation();
+                              toggleExpanded(item.name);
                             }}
                             className="p-1 hover:bg-gray-200 dark:hover:bg-gray-700 rounded"
                           >
@@ -186,9 +212,10 @@ const DoctorSidebar = ({ user }) => {
                             onClick={() => setIsOpen(false)}
                             className={`
                               block px-3 py-2 rounded text-sm transition-colors
-                              ${isSubItemActive(subItem.href)
-                                ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-medium'
-                                : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                              ${
+                                isSubItemActive(subItem.href)
+                                  ? "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white font-medium"
+                                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50"
                               }
                             `}
                           >
@@ -199,27 +226,25 @@ const DoctorSidebar = ({ user }) => {
                     )}
                   </div>
                 </div>
-              )
+              );
             })}
           </div>
         </nav>
 
-        {/* Bottom Section - Fixed at bottom */}
+        {/* Bottom Section */}
         <div className="border-t border-gray-200 dark:border-gray-800 p-4 bg-gray-50 dark:bg-gray-900/50">
           <div className="space-y-3">
             {/* Dynamic Notification Badge */}
             <NotificationBadge />
-
             {/* Support Link */}
-            <Link
-              href="/dashboard/support"
-              className="flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white transition-colors"
-              onClick={() => setIsOpen(false)}
-            >
-              <HelpCircle size={20} />
-              <span className="text-sm font-medium">Help & Support</span>
-            </Link>
-
+            <a href="mailto:hakheem.dev@gmail.com" className="flex items-center
+            space-x-3 px-4 py-3 rounded-lg text-gray-700 dark:text-gray-300
+            hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900
+            dark:hover:text-white transition-colors" 
+            onClick={() => setIsOpen(false)} >
+            <HelpCircle size={20} />
+            <span className="text-sm font-medium">Help & Support</span>
+            </a>
           </div>
         </div>
       </aside>
@@ -232,8 +257,7 @@ const DoctorSidebar = ({ user }) => {
         />
       )}
     </>
-  )
-}
+  );
+};
 
-export default DoctorSidebar
-
+export default DoctorSidebar;

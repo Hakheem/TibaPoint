@@ -101,10 +101,10 @@ const DoctorPage = async () => {
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold">Welcome back, Dr. {user.name}</h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-muted-foreground mt-1">
               Here's what's happening with your practice today
             </p>
           </div>

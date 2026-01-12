@@ -11,6 +11,11 @@ export const metadata = {
   title: "TibaPoint | Your Healthcare, Simplified",
   description:
     "TibaPoint helps patients book verified healthcare professionals instantly.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({ children }) {

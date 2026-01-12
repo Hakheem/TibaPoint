@@ -1,7 +1,8 @@
-import { Button } from '@/components/ui/button'
-import Link from 'next/link'
-import { Heart, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react'
-import { Input } from '../ui/input'
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import Image from "next/image";
+import { Heart, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import { Input } from "../ui/input";
 
 export default function Footer() {
   return (
@@ -13,17 +14,21 @@ export default function Footer() {
             {/* Brand Column */}
             <div className="space-y-4">
               <div className="flex items-center gap-2">
-                <div className="relative size-8">
-                  <img
+                <div className="relative h-8 w-8">
+                  <Image
                     src="/logo.png"
                     alt="TibaPoint Logo"
+                    width={32}
+                    height={32}
                     className="object-contain rounded-md"
+                    priority={true}
                   />
                 </div>
                 <span className="text-lg font-semibold">TibaPoint</span>
               </div>
               <p className="text-sm text-muted-foreground max-w-xs">
-                Your trusted healthcare companion. Connecting patients with verified doctors across Kenya.
+                Your trusted healthcare companion. Connecting patients with
+                verified doctors across Kenya.
               </p>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Heart className="size-4 text-red-500" />
@@ -33,25 +38,39 @@ export default function Footer() {
 
             {/* Quick Links */}
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Quick Links</h3>
+              <h3 className="font-semibold text-foreground mb-4">
+                Quick Links
+              </h3>
               <ul className="space-y-3">
                 <li>
-                  <Link href="/doctors" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <Link
+                    href="/doctors"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
                     Find Doctors
                   </Link>
                 </li>
                 <li>
-                  <Link href="/services" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <Link
+                    href="/services"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
                     Our Services
                   </Link>
                 </li>
                 <li>
-                  <Link href="/about" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <Link
+                    href="/about"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
                     About Us
                   </Link>
                 </li>
                 <li>
-                  <Link href="/contact" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <Link
+                    href="/contact"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
                     Contact
                   </Link>
                 </li>
@@ -63,31 +82,45 @@ export default function Footer() {
               <h3 className="font-semibold text-foreground mb-4">Legal</h3>
               <ul className="space-y-3">
                 <li>
-                  <Link href="/privacy" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <Link
+                    href="/privacy"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
                     Privacy Policy
                   </Link>
                 </li>
                 <li>
-                  <Link href="/terms" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <Link
+                    href="/terms"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
                     Terms of Service
                   </Link>
                 </li>
                 <li>
-                  <Link href="/cookies" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <Link
+                    href="/cookies"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
                     Cookie Policy
                   </Link>
                 </li>
                 <li>
-                  <Link href="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  <Link
+                    href="/"
+                    className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                  >
                     Security
                   </Link>
                 </li>
               </ul>
-            </div> 
+            </div>
 
             {/* Newsletter */}
             <div>
-              <h3 className="font-semibold text-foreground mb-4">Stay Updated</h3>
+              <h3 className="font-semibold text-foreground mb-4">
+                Stay Updated
+              </h3>
               <p className="text-sm text-muted-foreground mb-4">
                 Get health tips and updates directly to your inbox.
               </p>
@@ -97,9 +130,7 @@ export default function Footer() {
                   placeholder="Your email"
                   className="flex-1 px-3 py-2 text-sm border-primary/50 "
                 />
-                <Button className="bg-gradient-primary">
-                  Subscribe
-                </Button>
+                <Button className="bg-gradient-primary">Subscribe</Button>
               </div>
             </div>
           </div>
@@ -143,5 +174,5 @@ export default function Footer() {
         </div>
       </div>
     </footer>
-  )
+  );
 }

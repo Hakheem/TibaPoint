@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@clerk/nextjs";
 
 export function useNotificationSSE() {
@@ -10,6 +10,7 @@ export function useNotificationSSE() {
   const [currentPopupNotification, setCurrentPopupNotification] =
     useState(null);
   const { userId } = useAuth();
+  const popupTimerRef = useRef(null);
 
   // Define tryWebAudioAPI first so it can be referenced by playNotificationSound
   const tryWebAudioAPI = useCallback(() => {
@@ -85,6 +86,27 @@ export function useNotificationSSE() {
     [tryWebAudioAPI]
   );
 
+  const showNotificationPopup = useCallback((notification) => {
+    try {
+      // Clear any existing timer
+      if (popupTimerRef.current) {
+        clearTimeout(popupTimerRef.current);
+      }
+
+      setCurrentPopupNotification(notification);
+      setShowPopup(true);
+
+      // Auto-hide after 10 seconds
+      popupTimerRef.current = setTimeout(() => {
+        setShowPopup(false);
+        setCurrentPopupNotification(null);
+        popupTimerRef.current = null;
+      }, 10000);
+    } catch (error) {
+      console.error("Popup error:", error);
+    }
+  }, []);
+
   useEffect(() => {
     if (!userId) return;
 
@@ -156,28 +178,24 @@ export function useNotificationSSE() {
         clearTimeout(reconnectTimeout);
       }
     };
-  }, [userId, playNotificationSound]);
+  }, [userId, playNotificationSound, showNotificationPopup]);
 
-  const showNotificationPopup = useCallback((notification) => {
-    try {
-      setCurrentPopupNotification(notification);
-      setShowPopup(true);
-
-      // Auto-hide after 10 seconds
-      const timer = setTimeout(() => {
-        setShowPopup(false);
-        setCurrentPopupNotification(null);
-      }, 10000);
-
-      return () => clearTimeout(timer);
-    } catch (error) {
-      console.error("Popup error:", error);
-    }
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (popupTimerRef.current) {
+        clearTimeout(popupTimerRef.current);
+      }
+    };
   }, []);
 
   const closePopup = useCallback(() => {
     setShowPopup(false);
     setCurrentPopupNotification(null);
+    if (popupTimerRef.current) {
+      clearTimeout(popupTimerRef.current);
+      popupTimerRef.current = null;
+    }
   }, []);
 
   return {
@@ -189,5 +207,3 @@ export function useNotificationSSE() {
     playNotificationSound,
   };
 }
-
-
