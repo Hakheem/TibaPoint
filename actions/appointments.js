@@ -11,7 +11,7 @@ const AGORA_EXPIRE_TIME = 3600; // 1 hour
 export async function generateAgoraToken(
   appointmentId,
   userId,
-  role = "doctor"
+  role = "doctor",
 ) {
   try {
     const { userId: authUserId } = await auth();
@@ -134,7 +134,7 @@ export async function generateAgoraToken(
       channelName,
       agoraUid,
       agoraRole,
-      privilegeExpireTime
+      privilegeExpireTime,
     );
 
     console.log("✅ Token generated successfully", {
@@ -336,7 +336,7 @@ export async function endVideoSession(
   appointmentId,
   notes,
   diagnosis,
-  prescription
+  prescription,
 ) {
   try {
     const { userId } = await auth();
@@ -546,7 +546,7 @@ export async function bookAppointmentWithValidation(formData) {
     const platformCommission = platformConfig.platformCommission;
     const earnings = platformConfig.calculateEarnings(
       packagePrice,
-      platformCommission
+      platformCommission,
     );
     const platformEarnings = earnings.platformEarnings;
     const doctorEarnings = earnings.doctorEarnings;
@@ -647,7 +647,7 @@ export async function bookAppointmentWithValidation(formData) {
     } catch (notifErr) {
       console.error(
         "Failed to create post-transaction notifications:",
-        notifErr
+        notifErr,
       );
     }
 
@@ -668,7 +668,7 @@ export async function bookAppointmentWithValidation(formData) {
 export async function rescheduleAppointment(
   appointmentId,
   newAvailabilitySlotId,
-  newAppointmentDate
+  newAppointmentDate,
 ) {
   try {
     const { userId } = await auth();
@@ -813,7 +813,7 @@ export async function requestReschedule(
   appointmentId,
   requestedSlotId,
   requestedDate,
-  reason
+  reason,
 ) {
   try {
     const { userId } = await auth();
@@ -966,7 +966,7 @@ export async function getAvailableSlotsForDoctor(doctorId, targetDate) {
         const hours = apt.startTime.getHours().toString().padStart(2, "0");
         const minutes = apt.startTime.getMinutes().toString().padStart(2, "0");
         return `${hours}:${minutes}`;
-      })
+      }),
     );
 
     // Filter out booked slots and apply time restrictions
@@ -1235,5 +1235,128 @@ export async function cancelPatientAppointment(appointmentId, reason) {
   } catch (error) {
     console.error("Failed to cancel appointment:", error);
     return { success: false, error: "Failed to cancel appointment" };
+  }
+}
+// ============================================
+// ADMIN APPOINTMENTS FUNCTIONS
+// ============================================
+
+export async function getAllAppointmentsAdmin(filters = {}) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const admin = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "ADMIN",
+      },
+    });
+
+    if (!admin) {
+      return { success: false, error: "Unauthorized - Admin access required" };
+    }
+
+    const whereClause = {};
+
+    if (filters.status) {
+      whereClause.status = filters.status;
+    }
+
+    if (filters.doctorId) {
+      whereClause.doctorId = filters.doctorId;
+    }
+
+    if (filters.patientId) {
+      whereClause.patientId = filters.patientId;
+    }
+
+    if (filters.startDate || filters.endDate) {
+      whereClause.startTime = {};
+      if (filters.startDate) {
+        whereClause.startTime.gte = new Date(filters.startDate);
+      }
+      if (filters.endDate) {
+        whereClause.startTime.lte = new Date(filters.endDate);
+      }
+    }
+
+    // Get all appointments with patient and doctor details
+    const appointments = await db.appointment.findMany({
+      where: whereClause,
+      include: {
+        patient: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            imageUrl: true,
+          },
+        },
+        doctor: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            speciality: true,
+            imageUrl: true,
+          },
+        },
+      },
+      orderBy: {
+        startTime: "desc",
+      },
+      take: filters.limit || 100,
+    });
+
+    // Calculate statistics
+    const totalCount = await db.appointment.count({ where: whereClause });
+
+    const upcomingCount = await db.appointment.count({
+      where: {
+        ...whereClause,
+        status: { in: ["SCHEDULED", "CONFIRMED"] },
+        startTime: { gte: new Date() },
+      },
+    });
+
+    const inProgressCount = await db.appointment.count({
+      where: {
+        ...whereClause,
+        status: "IN_PROGRESS",
+      },
+    });
+
+    const completedCount = await db.appointment.count({
+      where: {
+        ...whereClause,
+        status: "COMPLETED",
+      },
+    });
+
+    const cancelledCount = await db.appointment.count({
+      where: {
+        ...whereClause,
+        status: "CANCELLED",
+      },
+    });
+
+    return {
+      success: true,
+      appointments,
+      statistics: {
+        total: totalCount,
+        upcoming: upcomingCount,
+        scheduled: inProgressCount,
+        completed: completedCount,
+        cancelled: cancelledCount,
+      },
+    };
+  } catch (error) {
+    console.error("Failed to fetch admin appointments:", error);
+    return { success: false, error: "Failed to fetch appointments" };
   }
 }

@@ -464,6 +464,283 @@ export async function getNotificationStatistics() {
 // ============================================
 // ADMIN NOTIFICATION FUNCTIONS
 // ============================================
+
+/**
+ * Get admin's own notifications (not all platform notifications)
+ * Admins can only see and manage their own notifications
+ */
+export async function getAdminNotifications(filters = {}) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const admin = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "ADMIN",
+      },
+      select: { id: true, role: true },
+    });
+
+    if (!admin) {
+      return { success: false, error: "Unauthorized - Admin access required" };
+    }
+
+    const whereClause = {
+      userId: admin.id, // Only admin's own notifications
+    };
+
+    if (filters.type) {
+      whereClause.type = filters.type;
+    }
+
+    if (filters.isRead !== undefined) {
+      whereClause.isRead = filters.isRead;
+    }
+
+    const notifications = await db.notification.findMany({
+      where: whereClause,
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: filters.limit || 50,
+    });
+
+    const unreadCount = await db.notification.count({
+      where: {
+        userId: admin.id,
+        isRead: false,
+      },
+    });
+
+    const totalCount = await db.notification.count({
+      where: {
+        userId: admin.id,
+      },
+    });
+
+    return {
+      success: true,
+      notifications,
+      unreadCount,
+      statistics: {
+        total: totalCount,
+        unread: unreadCount,
+        read: totalCount - unreadCount,
+      },
+    };
+  } catch (error) {
+    console.error("Failed to fetch admin notifications:", error);
+    return { success: false, error: "Failed to fetch notifications" };
+  }
+}
+
+/**
+ * Mark admin's own notification as read
+ */
+export async function markAdminNotificationAsRead(notificationId) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const admin = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "ADMIN",
+      },
+      select: { id: true },
+    });
+
+    if (!admin) {
+      return { success: false, error: "Unauthorized - Admin access required" };
+    }
+
+    const notification = await db.notification.findUnique({
+      where: { id: notificationId },
+    });
+
+    if (!notification) {
+      return { success: false, error: "Notification not found" };
+    }
+
+    // Ensure the notification belongs to the admin
+    if (notification.userId !== admin.id) {
+      return {
+        success: false,
+        error: "Unauthorized - Cannot mark other users' notifications",
+      };
+    }
+
+    await db.notification.update({
+      where: { id: notificationId },
+      data: {
+        isRead: true,
+        readAt: new Date(),
+      },
+    });
+
+    revalidatePath("/admin/notifications");
+
+    return {
+      success: true,
+      message: "Notification marked as read",
+    };
+  } catch (error) {
+    console.error("Failed to mark admin notification as read:", error);
+    return { success: false, error: "Failed to update notification" };
+  }
+}
+
+/**
+ * Mark all admin's own notifications as read
+ */
+export async function markAllAdminNotificationsAsRead() {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const admin = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "ADMIN",
+      },
+      select: { id: true },
+    });
+
+    if (!admin) {
+      return { success: false, error: "Unauthorized - Admin access required" };
+    }
+
+    const result = await db.notification.updateMany({
+      where: {
+        userId: admin.id,
+        isRead: false,
+      },
+      data: {
+        isRead: true,
+        readAt: new Date(),
+      },
+    });
+
+    revalidatePath("/admin/notifications");
+
+    return {
+      success: true,
+      message: `${result.count} notifications marked as read`,
+      count: result.count,
+    };
+  } catch (error) {
+    console.error("Failed to mark all admin notifications as read:", error);
+    return { success: false, error: "Failed to update notifications" };
+  }
+}
+
+/**
+ * Delete admin's own notification
+ */
+export async function deleteAdminNotification(notificationId) {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const admin = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "ADMIN",
+      },
+      select: { id: true },
+    });
+
+    if (!admin) {
+      return { success: false, error: "Unauthorized - Admin access required" };
+    }
+
+    const notification = await db.notification.findUnique({
+      where: { id: notificationId },
+    });
+
+    if (!notification) {
+      return { success: false, error: "Notification not found" };
+    }
+
+    if (notification.userId !== admin.id) {
+      return {
+        success: false,
+        error: "Unauthorized - Cannot delete other users' notifications",
+      };
+    }
+
+    await db.notification.delete({
+      where: { id: notificationId },
+    });
+
+    revalidatePath("/admin/notifications");
+
+    return {
+      success: true,
+      message: "Notification deleted",
+    };
+  } catch (error) {
+    console.error("Failed to delete admin notification:", error);
+    return { success: false, error: "Failed to delete notification" };
+  }
+}
+
+/**
+ * Delete admin's read notifications
+ */
+export async function deleteAdminReadNotifications() {
+  try {
+    const { userId } = await auth();
+
+    if (!userId) {
+      return { success: false, error: "Unauthorized" };
+    }
+
+    const admin = await db.user.findUnique({
+      where: {
+        clerkUserId: userId,
+        role: "ADMIN",
+      },
+      select: { id: true },
+    });
+
+    if (!admin) {
+      return { success: false, error: "Unauthorized - Admin access required" };
+    }
+
+    const result = await db.notification.deleteMany({
+      where: {
+        userId: admin.id,
+        isRead: true,
+      },
+    });
+
+    revalidatePath("/admin/notifications");
+
+    return {
+      success: true,
+      message: `${result.count} notifications deleted`,
+      count: result.count,
+    };
+  } catch (error) {
+    console.error("Failed to delete admin read notifications:", error);
+    return { success: false, error: "Failed to delete notifications" };
+  }
+}
+
 export async function sendNotificationToUser(data) {
   try {
     const { userId } = await auth();
@@ -545,8 +822,8 @@ export async function sendBulkNotifications(data) {
             message: data.message,
             actionUrl: data.actionUrl || null,
           },
-        })
-      )
+        }),
+      ),
     );
 
     return {
@@ -603,8 +880,8 @@ export async function sendNotificationToRole(data) {
             message: data.message,
             actionUrl: data.actionUrl || null,
           },
-        })
-      )
+        }),
+      ),
     );
 
     return {
@@ -729,7 +1006,7 @@ export async function createAndSendNotification(data) {
     // Determine sound and popup settings based on role and notification type
     const notificationSettings = getNotificationPreferences(
       recipient?.role,
-      data.type
+      data.type,
     );
 
     // Send via SSE

@@ -55,11 +55,6 @@ const AdminSidebar = ({ user }) => {
       name: 'Appointments',
       href: '/admin/appointments',
       icon: Calendar,
-      subItems: [
-        { name: 'All Appointments', href: '/admin/appointments' },
-        { name: 'Upcoming', href: '/admin/appointments/upcoming' },
-        { name: 'Completed', href: '/admin/appointments/completed' },
-      ],
     },
     {
       name: 'Earnings',

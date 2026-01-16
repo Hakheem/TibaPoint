@@ -1,26 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardFooter, 
-  CardHeader, 
-  CardTitle 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { 
-  Bell, 
-  Calendar, 
-  Star, 
-  AlertCircle, 
-  CheckCircle, 
-  CreditCard, 
+import {
+  Bell,
+  Calendar,
+  Star,
+  AlertCircle,
+  CheckCircle,
+  CreditCard,
   Shield,
   Clock,
   Trash2,
@@ -33,19 +33,26 @@ import {
   X,
   User,
   Mail,
-  Loader2
+  Loader2,
 } from "lucide-react";
 import { format } from "date-fns";
-import { 
-  getAllNotificationsAdmin,
-  markNotificationAsRead,
-  markAllNotificationsAsRead,
-  deleteNotification,
-  deleteReadNotifications,
+import {
+  getAdminNotifications,
+  markAdminNotificationAsRead,
+  markAllAdminNotificationsAsRead,
+  deleteAdminNotification,
+  deleteAdminReadNotifications,
   sendNotificationToUser,
-  sendNotificationToRole
+  sendNotificationToRole,
 } from "@/actions/notifications";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 
 export default function AdminNotificationsPage() {
@@ -54,7 +61,7 @@ export default function AdminNotificationsPage() {
   const [statistics, setStatistics] = useState({
     total: 0,
     unread: 0,
-    read: 0
+    read: 0,
   });
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
@@ -62,7 +69,7 @@ export default function AdminNotificationsPage() {
   const [selectedRole, setSelectedRole] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [processing, setProcessing] = useState(null);
-  
+
   // Send notification modal state
   const [showSendModal, setShowSendModal] = useState(false);
   const [sendForm, setSendForm] = useState({
@@ -72,7 +79,7 @@ export default function AdminNotificationsPage() {
     type: "SYSTEM",
     title: "",
     message: "",
-    actionUrl: ""
+    actionUrl: "",
   });
   const [sending, setSending] = useState(false);
 
@@ -87,7 +94,7 @@ export default function AdminNotificationsPage() {
   const loadNotifications = async () => {
     try {
       setLoading(true);
-      const result = await getAllNotificationsAdmin();
+      const result = await getAdminNotifications();
 
       if (result.success) {
         setNotifications(result.notifications || []);
@@ -109,29 +116,23 @@ export default function AdminNotificationsPage() {
 
     // Filter by tab
     if (activeTab === "unread") {
-      filtered = filtered.filter(n => !n.isRead);
+      filtered = filtered.filter((n) => !n.isRead);
     } else if (activeTab === "read") {
-      filtered = filtered.filter(n => n.isRead);
+      filtered = filtered.filter((n) => n.isRead);
     }
 
     // Filter by type
     if (selectedType !== "ALL") {
-      filtered = filtered.filter(n => n.type === selectedType);
-    }
-
-    // Filter by role
-    if (selectedRole !== "ALL") {
-      filtered = filtered.filter(n => n.user?.role === selectedRole);
+      filtered = filtered.filter((n) => n.type === selectedType);
     }
 
     // Filter by search query
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(n => 
-        n.title.toLowerCase().includes(query) ||
-        n.message.toLowerCase().includes(query) ||
-        n.user?.name?.toLowerCase().includes(query) ||
-        n.user?.email?.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (n) =>
+          n.title.toLowerCase().includes(query) ||
+          n.message.toLowerCase().includes(query),
       );
     }
 
@@ -141,7 +142,7 @@ export default function AdminNotificationsPage() {
   const handleMarkAllAsRead = async () => {
     try {
       setProcessing("all");
-      const result = await markAllNotificationsAsRead();
+      const result = await markAllAdminNotificationsAsRead();
       if (result.success) {
         toast.success("All notifications marked as read");
         loadNotifications();
@@ -160,12 +161,14 @@ export default function AdminNotificationsPage() {
     const promise = new Promise(async (resolve, reject) => {
       try {
         setProcessing("delete-read");
-        const result = await deleteReadNotifications();
+        const result = await deleteAdminReadNotifications();
         if (result.success) {
           loadNotifications();
           resolve("Read notifications cleared successfully");
         } else {
-          reject(new Error(result.error || "Failed to delete read notifications"));
+          reject(
+            new Error(result.error || "Failed to delete read notifications"),
+          );
         }
       } catch (error) {
         console.error("Failed to delete read notifications:", error);
@@ -178,14 +181,14 @@ export default function AdminNotificationsPage() {
     toast.promise(promise, {
       loading: "Deleting read notifications...",
       success: (message) => message,
-      error: (error) => error.message
+      error: (error) => error.message,
     });
   };
 
   const handleMarkAsRead = async (notificationId) => {
     try {
       setProcessing(notificationId);
-      const result = await markNotificationAsRead(notificationId);
+      const result = await markAdminNotificationAsRead(notificationId);
       if (result.success) {
         toast.success("Notification marked as read");
         loadNotifications();
@@ -200,11 +203,14 @@ export default function AdminNotificationsPage() {
     }
   };
 
-  const handleDeleteNotification = async (notificationId, notificationTitle) => {
+  const handleDeleteNotification = async (
+    notificationId,
+    notificationTitle,
+  ) => {
     const promise = new Promise(async (resolve, reject) => {
       try {
         setProcessing(notificationId);
-        const result = await deleteNotification(notificationId);
+        const result = await deleteAdminNotification(notificationId);
         if (result.success) {
           loadNotifications();
           resolve(`"${notificationTitle}" deleted successfully`);
@@ -222,7 +228,7 @@ export default function AdminNotificationsPage() {
     toast.promise(promise, {
       loading: "Deleting notification...",
       success: (message) => message,
-      error: (error) => error.message
+      error: (error) => error.message,
     });
   };
 
@@ -243,7 +249,7 @@ export default function AdminNotificationsPage() {
             type: sendForm.type,
             title: sendForm.title,
             message: sendForm.message,
-            actionUrl: sendForm.actionUrl || null
+            actionUrl: sendForm.actionUrl || null,
           });
         } else {
           // For sending to specific user
@@ -252,7 +258,7 @@ export default function AdminNotificationsPage() {
             type: sendForm.type,
             title: sendForm.title,
             message: sendForm.message,
-            actionUrl: sendForm.actionUrl || null
+            actionUrl: sendForm.actionUrl || null,
           });
         }
 
@@ -265,7 +271,7 @@ export default function AdminNotificationsPage() {
             type: "SYSTEM",
             title: "",
             message: "",
-            actionUrl: ""
+            actionUrl: "",
           });
           loadNotifications();
           resolve(result.message || "Notification sent successfully");
@@ -283,7 +289,7 @@ export default function AdminNotificationsPage() {
     toast.promise(promise, {
       loading: "Sending notification...",
       success: (message) => message,
-      error: (error) => error.message
+      error: (error) => error.message,
     });
   };
 
@@ -298,7 +304,7 @@ export default function AdminNotificationsPage() {
       PENALTY: AlertCircle,
       CREDIT_EXPIRY: AlertCircle,
       REFUND: CreditCard,
-      default: Bell
+      default: Bell,
     };
     return icons[type] || icons.default;
   };
@@ -314,7 +320,7 @@ export default function AdminNotificationsPage() {
       PENALTY: "bg-red-100 text-red-700 border-red-200",
       CREDIT_EXPIRY: "bg-orange-100 text-orange-700 border-orange-200",
       REFUND: "bg-indigo-100 text-indigo-700 border-indigo-200",
-      default: "bg-gray-100 text-gray-700 border-gray-200"
+      default: "bg-gray-100 text-gray-700 border-gray-200",
     };
     return colors[type] || colors.default;
   };
@@ -329,7 +335,7 @@ export default function AdminNotificationsPage() {
       VERIFICATION: "Verification",
       PENALTY: "Penalty",
       CREDIT_EXPIRY: "Credit Expiry",
-      REFUND: "Refund"
+      REFUND: "Refund",
     };
     return labels[type] || type;
   };
@@ -339,7 +345,7 @@ export default function AdminNotificationsPage() {
       DOCTOR: "bg-blue-100 text-blue-700",
       PATIENT: "bg-green-100 text-green-700",
       ADMIN: "bg-purple-100 text-purple-700",
-      default: "bg-gray-100 text-gray-700"
+      default: "bg-gray-100 text-gray-700",
     };
     return colors[role] || colors.default;
   };
@@ -356,7 +362,17 @@ export default function AdminNotificationsPage() {
   }
 
   const roles = ["ALL", "DOCTOR", "PATIENT", "ADMIN"];
-  const notificationTypes = ["ALL", "APPOINTMENT", "REMINDER", "REVIEW", "PAYOUT", "SYSTEM", "VERIFICATION", "PENALTY", "REFUND"];
+  const notificationTypes = [
+    "ALL",
+    "APPOINTMENT",
+    "REMINDER",
+    "REVIEW",
+    "PAYOUT",
+    "SYSTEM",
+    "VERIFICATION",
+    "PENALTY",
+    "REFUND",
+  ];
 
   return (
     <div className="space-y-6">
@@ -400,7 +416,9 @@ export default function AdminNotificationsPage() {
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Total Notifications</p>
+                <p className="text-sm text-muted-foreground">
+                  Total Notifications
+                </p>
                 <p className="text-2xl font-bold mt-2">{statistics.total}</p>
               </div>
               <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center">
@@ -454,7 +472,7 @@ export default function AdminNotificationsPage() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
                   type="text"
-                  placeholder="Search by user, title, or message..."
+                  placeholder="Search by title or message..."
                   className="pl-10 pr-4 py-2 border rounded-md w-full sm:w-64"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -465,20 +483,9 @@ export default function AdminNotificationsPage() {
                 value={selectedType}
                 onChange={(e) => setSelectedType(e.target.value)}
               >
-                {notificationTypes.map(type => (
+                {notificationTypes.map((type) => (
                   <option key={type} value={type}>
                     {type === "ALL" ? "All Types" : getTypeLabel(type)}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="px-3 py-2 border rounded-md text-sm"
-                value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value)}
-              >
-                {roles.map(role => (
-                  <option key={role} value={role}>
-                    {role === "ALL" ? "All Roles" : role}
                   </option>
                 ))}
               </select>
@@ -486,17 +493,17 @@ export default function AdminNotificationsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab}>
+          <Tabs
+            defaultValue="all"
+            value={activeTab}
+            onValueChange={setActiveTab}
+          >
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="all">
-                All ({statistics.total})
-              </TabsTrigger>
+              <TabsTrigger value="all">All ({statistics.total})</TabsTrigger>
               <TabsTrigger value="unread">
                 Unread ({statistics.unread})
               </TabsTrigger>
-              <TabsTrigger value="read">
-                Read ({statistics.read})
-              </TabsTrigger>
+              <TabsTrigger value="read">Read ({statistics.read})</TabsTrigger>
             </TabsList>
 
             <TabsContent value={activeTab} className="mt-6">
@@ -504,30 +511,34 @@ export default function AdminNotificationsPage() {
                 {filteredNotifications.length === 0 ? (
                   <div className="text-center py-12">
                     <Bell className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No notifications found</h3>
+                    <h3 className="text-lg font-medium mb-2">
+                      No notifications found
+                    </h3>
                     <p className="text-gray-500">
-                      {activeTab === "all" 
+                      {activeTab === "all"
                         ? "There are no notifications in the system."
                         : activeTab === "unread"
-                        ? "All notifications have been read."
-                        : "No read notifications found."}
+                          ? "All notifications have been read."
+                          : "No read notifications found."}
                     </p>
                   </div>
                 ) : (
                   filteredNotifications.map((notification) => {
                     const Icon = getNotificationIcon(notification.type);
-                    
+
                     return (
                       <div
                         key={notification.id}
                         className={`p-4 border rounded-lg transition-all hover:shadow-md ${
-                          !notification.isRead 
-                            ? "border-l-4 border-l-blue-500 bg-blue-50/50" 
+                          !notification.isRead
+                            ? "border-l-4 border-l-blue-500 bg-blue-50/50"
                             : ""
                         }`}
                       >
                         <div className="flex items-start gap-4">
-                          <div className={`h-12 w-12 rounded-full flex items-center justify-center ${getNotificationColor(notification.type)}`}>
+                          <div
+                            className={`h-12 w-12 rounded-full flex items-center justify-center ${getNotificationColor(notification.type)}`}
+                          >
                             <Icon className="h-6 w-6" />
                           </div>
                           <div className="flex-1 min-w-0">
@@ -537,23 +548,19 @@ export default function AdminNotificationsPage() {
                                   {notification.title}
                                 </h4>
                                 <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                  <Badge 
-                                    variant="outline" 
-                                    className={getNotificationColor(notification.type).replace("border-", "")}
+                                  <Badge
+                                    variant="outline"
+                                    className={getNotificationColor(
+                                      notification.type,
+                                    ).replace("border-", "")}
                                   >
                                     {getTypeLabel(notification.type)}
                                   </Badge>
-                                  {notification.user && (
-                                    <Badge 
-                                      variant="outline" 
-                                      className={getRoleColor(notification.user.role)}
-                                    >
-                                      <User className="h-3 w-3 mr-1" />
-                                      {notification.user.name} ({notification.user.role})
-                                    </Badge>
-                                  )}
                                   <span className="text-sm text-gray-500">
-                                    {format(new Date(notification.createdAt), "MMM d, yyyy 'at' h:mm a")}
+                                    {format(
+                                      new Date(notification.createdAt),
+                                      "MMM d, yyyy 'at' h:mm a",
+                                    )}
                                   </span>
                                 </div>
                               </div>
@@ -562,16 +569,25 @@ export default function AdminNotificationsPage() {
                                   <Button
                                     variant="ghost"
                                     size="sm"
-                                    onClick={() => handleMarkAsRead(notification.id)}
+                                    onClick={() =>
+                                      handleMarkAsRead(notification.id)
+                                    }
                                     disabled={processing === notification.id}
                                   >
-                                    {processing === notification.id ? "..." : "Mark as read"}
+                                    {processing === notification.id
+                                      ? "..."
+                                      : "Mark as read"}
                                   </Button>
                                 )}
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  onClick={() => handleDeleteNotification(notification.id, notification.title)}
+                                  onClick={() =>
+                                    handleDeleteNotification(
+                                      notification.id,
+                                      notification.title,
+                                    )
+                                  }
                                   disabled={processing === notification.id}
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -612,25 +628,33 @@ export default function AdminNotificationsPage() {
               Send a notification to users or specific user
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div>
               <label className="block text-sm font-medium mb-2">Target</label>
               <div className="flex gap-2">
                 <Button
                   type="button"
-                  variant={sendForm.targetType === "ROLE" ? "default" : "outline"}
+                  variant={
+                    sendForm.targetType === "ROLE" ? "default" : "outline"
+                  }
                   size="sm"
-                  onClick={() => setSendForm({...sendForm, targetType: "ROLE"})}
+                  onClick={() =>
+                    setSendForm({ ...sendForm, targetType: "ROLE" })
+                  }
                 >
                   <Users className="h-4 w-4 mr-2" />
                   Role
                 </Button>
                 <Button
                   type="button"
-                  variant={sendForm.targetType === "USER" ? "default" : "outline"}
+                  variant={
+                    sendForm.targetType === "USER" ? "default" : "outline"
+                  }
                   size="sm"
-                  onClick={() => setSendForm({...sendForm, targetType: "USER"})}
+                  onClick={() =>
+                    setSendForm({ ...sendForm, targetType: "USER" })
+                  }
                 >
                   <User className="h-4 w-4 mr-2" />
                   Specific User
@@ -644,7 +668,9 @@ export default function AdminNotificationsPage() {
                 <select
                   className="w-full px-3 py-2 border rounded-md"
                   value={sendForm.role}
-                  onChange={(e) => setSendForm({...sendForm, role: e.target.value})}
+                  onChange={(e) =>
+                    setSendForm({ ...sendForm, role: e.target.value })
+                  }
                 >
                   <option value="DOCTOR">Doctors</option>
                   <option value="PATIENT">Patients</option>
@@ -654,21 +680,29 @@ export default function AdminNotificationsPage() {
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium mb-2">User ID</label>
+                <label className="block text-sm font-medium mb-2">
+                  User ID
+                </label>
                 <Input
                   placeholder="Enter user ID"
                   value={sendForm.userId}
-                  onChange={(e) => setSendForm({...sendForm, userId: e.target.value})}
+                  onChange={(e) =>
+                    setSendForm({ ...sendForm, userId: e.target.value })
+                  }
                 />
               </div>
             )}
 
             <div>
-              <label className="block text-sm font-medium mb-2">Notification Type</label>
+              <label className="block text-sm font-medium mb-2">
+                Notification Type
+              </label>
               <select
                 className="w-full px-3 py-2 border rounded-md"
                 value={sendForm.type}
-                onChange={(e) => setSendForm({...sendForm, type: e.target.value})}
+                onChange={(e) =>
+                  setSendForm({ ...sendForm, type: e.target.value })
+                }
               >
                 <option value="SYSTEM">System</option>
                 <option value="APPOINTMENT">Appointment</option>
@@ -683,40 +717,49 @@ export default function AdminNotificationsPage() {
               <Input
                 placeholder="Notification title"
                 value={sendForm.title}
-                onChange={(e) => setSendForm({...sendForm, title: e.target.value})}
+                onChange={(e) =>
+                  setSendForm({ ...sendForm, title: e.target.value })
+                }
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Message *</label>
+              <label className="block text-sm font-medium mb-2">
+                Message *
+              </label>
               <Textarea
                 placeholder="Notification message"
                 rows={4}
                 value={sendForm.message}
-                onChange={(e) => setSendForm({...sendForm, message: e.target.value})}
+                onChange={(e) =>
+                  setSendForm({ ...sendForm, message: e.target.value })
+                }
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-2">Action URL (Optional)</label>
+              <label className="block text-sm font-medium mb-2">
+                Action URL (Optional)
+              </label>
               <Input
                 placeholder="https://example.com/action"
                 value={sendForm.actionUrl}
-                onChange={(e) => setSendForm({...sendForm, actionUrl: e.target.value})}
+                onChange={(e) =>
+                  setSendForm({ ...sendForm, actionUrl: e.target.value })
+                }
               />
             </div>
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setShowSendModal(false)}
-            >
+            <Button variant="outline" onClick={() => setShowSendModal(false)}>
               Cancel
             </Button>
             <Button
               onClick={handleSendNotification}
-              disabled={sending || !sendForm.title.trim() || !sendForm.message.trim()}
+              disabled={
+                sending || !sendForm.title.trim() || !sendForm.message.trim()
+              }
             >
               {sending ? (
                 <>
@@ -736,4 +779,3 @@ export default function AdminNotificationsPage() {
     </div>
   );
 }
-

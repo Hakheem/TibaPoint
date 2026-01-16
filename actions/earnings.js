@@ -1,8 +1,8 @@
 "use server";
 
 import { db } from "@/lib/db";
-import { auth } from '@clerk/nextjs/server';
-import { revalidatePath } from 'next/cache';
+import { auth } from "@clerk/nextjs/server";
+import { revalidatePath } from "next/cache";
 
 // DOCTOR EARNINGS FUNCTIONS
 export async function getDoctorEarnings(filters = {}) {
@@ -25,7 +25,7 @@ export async function getDoctorEarnings(filters = {}) {
     }
 
     const { startDate, endDate, status } = filters;
-    
+
     let whereClause = {
       doctorId: doctor.id,
       status: "COMPLETED",
@@ -59,13 +59,19 @@ export async function getDoctorEarnings(filters = {}) {
         packagePrice: true,
       },
       orderBy: {
-        completedAt: 'desc',
+        completedAt: "desc",
       },
     });
 
     // Calculate totals
-    const totalEarnings = appointments.reduce((sum, apt) => sum + (apt.doctorEarnings || 0), 0);
-    const totalPlatformEarnings = appointments.reduce((sum, apt) => sum + (apt.platformEarnings || 0), 0);
+    const totalEarnings = appointments.reduce(
+      (sum, apt) => sum + (apt.doctorEarnings || 0),
+      0,
+    );
+    const totalPlatformEarnings = appointments.reduce(
+      (sum, apt) => sum + (apt.platformEarnings || 0),
+      0,
+    );
     const totalConsultations = appointments.length;
 
     // Get pending earnings (not yet disbursed)
@@ -90,22 +96,44 @@ export async function getDoctorEarnings(filters = {}) {
 
 async function calculatePendingEarnings(doctorId) {
   // Calculate earnings from completed appointments in the current payout period
-  // Assuming weekly payouts on Monday
-  
+  // that have NOT been paid out via a completed payout request
+
   const now = new Date();
   const dayOfWeek = now.getDay();
   const daysSinceMonday = (dayOfWeek + 6) % 7; // 0 = Monday, 1 = Tuesday, etc.
-  
+
   const lastPayoutDate = new Date(now);
   lastPayoutDate.setDate(now.getDate() - daysSinceMonday);
   lastPayoutDate.setHours(0, 0, 0, 0);
+
+  // Get the most recent COMPLETED payout
+  const lastCompletedPayout = await db.payout.findFirst({
+    where: {
+      doctorId: doctorId,
+      status: "COMPLETED",
+    },
+    orderBy: {
+      processedAt: "desc",
+    },
+    select: {
+      processedAt: true,
+      amount: true,
+    },
+  });
+
+  // Calculate pending: appointments completed since last payout or since Monday (whichever is later)
+  let earningsStartDate = lastPayoutDate;
+  if (lastCompletedPayout?.processedAt) {
+    earningsStartDate = new Date(lastCompletedPayout.processedAt);
+    earningsStartDate.setHours(0, 0, 0, 0);
+  }
 
   const appointments = await db.appointment.findMany({
     where: {
       doctorId: doctorId,
       status: "COMPLETED",
       completedAt: {
-        gte: lastPayoutDate,
+        gte: earningsStartDate,
       },
     },
     select: {
@@ -147,16 +175,16 @@ export async function requestWithdrawal(amount) {
     // Check if doctor has sufficient balance
     const availableBalance = doctorBalance + pendingEarnings;
     if (amount > availableBalance) {
-      return { 
-        success: false, 
-        error: `Insufficient balance. Available: ${Math.round(availableBalance)} KSH` 
+      return {
+        success: false,
+        error: `Insufficient balance. Available: ${Math.round(availableBalance)} KSH`,
       };
     }
 
     // Create withdrawal request
     // Note: You'll need to create a WithdrawalRequest model
     // For now, we'll create a notification for admin
-    
+
     await db.notification.create({
       data: {
         userId: doctor.id, // Store for doctor's reference
@@ -168,9 +196,10 @@ export async function requestWithdrawal(amount) {
       },
     });
 
-    return { 
-      success: true, 
-      message: "Withdrawal request submitted. It will be processed on the next payout date (Monday)." 
+    return {
+      success: true,
+      message:
+        "Withdrawal request submitted. It will be processed on the next payout date (Monday).",
     };
   } catch (error) {
     console.error("Failed to request withdrawal:", error);
@@ -200,7 +229,7 @@ export async function getPlatformEarnings(filters = {}) {
     }
 
     const { startDate, endDate } = filters;
-    
+
     let whereClause = {
       status: "COMPLETED",
     };
@@ -239,14 +268,23 @@ export async function getPlatformEarnings(filters = {}) {
         creditsCharged: true,
       },
       orderBy: {
-        completedAt: 'desc',
+        completedAt: "desc",
       },
     });
 
     // Calculate totals
-    const totalPlatformEarnings = appointments.reduce((sum, apt) => sum + (apt.platformEarnings || 0), 0);
-    const totalDoctorEarnings = appointments.reduce((sum, apt) => sum + (apt.doctorEarnings || 0), 0);
-    const totalRevenue = appointments.reduce((sum, apt) => sum + (apt.packagePrice || 0), 0);
+    const totalPlatformEarnings = appointments.reduce(
+      (sum, apt) => sum + (apt.platformEarnings || 0),
+      0,
+    );
+    const totalDoctorEarnings = appointments.reduce(
+      (sum, apt) => sum + (apt.doctorEarnings || 0),
+      0,
+    );
+    const totalRevenue = appointments.reduce(
+      (sum, apt) => sum + (apt.packagePrice || 0),
+      0,
+    );
     const totalConsultations = appointments.length;
 
     // Group by doctor for breakdown
@@ -280,7 +318,6 @@ export async function getPlatformEarnings(filters = {}) {
     return { success: false, error: "Failed to fetch platform earnings" };
   }
 }
-
 
 export async function processDoctorPayouts() {
   try {
@@ -317,12 +354,12 @@ export async function processDoctorPayouts() {
     });
 
     const payoutResults = [];
-    let totalPayout = 0; 
+    let totalPayout = 0;
 
     // Calculate pending earnings for each doctor and process payout
     for (const doctor of doctors) {
       const pendingEarnings = await calculatePendingEarnings(doctor.id);
-      
+
       if (pendingEarnings > 0) {
         // Update doctor's credit balance
         await db.user.update({
@@ -353,7 +390,7 @@ export async function processDoctorPayouts() {
           status: "PAID",
         });
 
-        totalPayout += pendingEarnings; 
+        totalPayout += pendingEarnings;
       }
     }
 
@@ -368,7 +405,6 @@ export async function processDoctorPayouts() {
     return { success: false, error: "Failed to process payouts" };
   }
 }
- 
 
 // EARNINGS STATISTICS
 export async function getEarningsStatistics(period = "month") {
@@ -395,16 +431,32 @@ export async function getEarningsStatistics(period = "month") {
         startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         break;
       case "month":
-        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        startDate = new Date(
+          now.getFullYear(),
+          now.getMonth() - 1,
+          now.getDate(),
+        );
         break;
       case "quarter":
-        startDate = new Date(now.getFullYear(), now.getMonth() - 3, now.getDate());
+        startDate = new Date(
+          now.getFullYear(),
+          now.getMonth() - 3,
+          now.getDate(),
+        );
         break;
       case "year":
-        startDate = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
+        startDate = new Date(
+          now.getFullYear() - 1,
+          now.getMonth(),
+          now.getDate(),
+        );
         break;
       default:
-        startDate = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
+        startDate = new Date(
+          now.getFullYear(),
+          now.getMonth() - 1,
+          now.getDate(),
+        );
     }
 
     let whereClause = {
@@ -431,7 +483,7 @@ export async function getEarningsStatistics(period = "month") {
         creditsCharged: true,
       },
       orderBy: {
-        completedAt: 'asc',
+        completedAt: "asc",
       },
     });
 
@@ -439,24 +491,24 @@ export async function getEarningsStatistics(period = "month") {
     const earningsByDate = {};
     const consultationsByDate = {};
 
-    appointments.forEach(apt => {
-      const date = apt.completedAt.toISOString().split('T')[0];
-      
+    appointments.forEach((apt) => {
+      const date = apt.completedAt.toISOString().split("T")[0];
+
       if (!earningsByDate[date]) {
         earningsByDate[date] = 0;
         consultationsByDate[date] = 0;
       }
-      
+
       if (user.role === "DOCTOR") {
         earningsByDate[date] += apt.doctorEarnings || 0;
       } else if (user.role === "ADMIN") {
         earningsByDate[date] += apt.platformEarnings || 0;
       }
-      
+
       consultationsByDate[date] += 1;
     });
 
-    const chartData = Object.keys(earningsByDate).map(date => ({
+    const chartData = Object.keys(earningsByDate).map((date) => ({
       date,
       earnings: Math.round(earningsByDate[date]),
       consultations: consultationsByDate[date],
@@ -473,7 +525,8 @@ export async function getEarningsStatistics(period = "month") {
     }, 0);
 
     const totalConsultations = appointments.length;
-    const avgEarningsPerConsultation = totalConsultations > 0 ? totalEarnings / totalConsultations : 0;
+    const avgEarningsPerConsultation =
+      totalConsultations > 0 ? totalEarnings / totalConsultations : 0;
 
     return {
       success: true,
@@ -483,7 +536,7 @@ export async function getEarningsStatistics(period = "month") {
         totalConsultations,
         avgEarningsPerConsultation: Math.round(avgEarningsPerConsultation),
         chartData,
-        appointments: appointments.slice(0, 10), 
+        appointments: appointments.slice(0, 10),
       },
     };
   } catch (error) {
@@ -491,4 +544,3 @@ export async function getEarningsStatistics(period = "month") {
     return { success: false, error: "Failed to fetch statistics" };
   }
 }
-

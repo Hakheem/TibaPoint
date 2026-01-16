@@ -1184,7 +1184,7 @@ export async function restorePatient(patientId) {
       },
     });
 
-    revalidatePath("/admin/patients");
+    revalidatePath("/admin/patients"); 
     return { success: true, message: "Patient restored successfully" };
   } catch (error) {
     console.error("Failed to restore patient:", error);
