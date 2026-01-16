@@ -247,9 +247,9 @@ model Appointment {
   // Credits & Payment (Dynamic pricing based on package)
   creditsCharged      Int       @default(2) // Always 2 credits = 1 consultation
   packagePrice        Int       // The price per consultation from patient's package (500, 450, or 400)
-  platformCommission  Float     @default(0.12) // 12% of packagePrice
-  platformEarnings    Float     // Calculated: packagePrice * 0.12
-  doctorEarnings      Float     // Calculated: packagePrice * 0.88
+  platformCommission  Float     @default(0.18) // 18% of packagePrice (configurable in lib/platformConfig.js)
+  platformEarnings    Float     // Calculated: packagePrice * platformCommission
+  doctorEarnings      Float     // Calculated: packagePrice * (1 - platformCommission)
   creditsRefunded     Int       @default(0) // 0, 1, or 2
   
   // Timestamps

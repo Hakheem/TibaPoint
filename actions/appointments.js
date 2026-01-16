@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { auth } from "@clerk/nextjs/server";
 import { revalidatePath } from "next/cache";
 import { RtcTokenBuilder, RtcRole } from "agora-access-token";
+import { platformConfig } from "@/lib/platformConfig";
 
 const AGORA_EXPIRE_TIME = 3600; // 1 hour
 
@@ -541,9 +542,14 @@ export async function bookAppointmentWithValidation(formData) {
       packagePrice = activePackage.pricePerConsultation;
     }
 
-    const platformCommission = 0.12;
-    const platformEarnings = packagePrice * platformCommission;
-    const doctorEarnings = packagePrice * (1 - platformCommission);
+    // Use dynamic platform commission from config
+    const platformCommission = platformConfig.platformCommission;
+    const earnings = platformConfig.calculateEarnings(
+      packagePrice,
+      platformCommission
+    );
+    const platformEarnings = earnings.platformEarnings;
+    const doctorEarnings = earnings.doctorEarnings;
 
     const result = await db.$transaction(async (tx) => {
       const appointment = await tx.appointment.create({

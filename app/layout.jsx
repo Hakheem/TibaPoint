@@ -12,9 +12,9 @@ export const metadata = {
   description:
     "TibaPoint helps patients book verified healthcare professionals instantly.",
   icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
+    icon: "/favicon.ico",
+    shortcut: "/favicon.ico",
+    apple: "/favicon.ico",
   },
 };
 

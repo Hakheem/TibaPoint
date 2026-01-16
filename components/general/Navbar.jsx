@@ -94,7 +94,7 @@ const Navbar = ({ dbUser }) => {
               src="/logo.png" 
               alt="TibaPoint" 
               fill 
-              className="object-contain rounded-md" 
+              className="object-contain rounded" 
               sizes="32px"
             />
           </div>
@@ -162,20 +162,13 @@ const Navbar = ({ dbUser }) => {
           </SignedOut>
 
           <SignedIn>
-            
-            <div className='scale-90' >
-            <NotificationBell />
+            <div className='scale-90'>
+              <NotificationBell />
             </div>
 
-            {/* Mobile credits display */}
-            {role === "PATIENT" && (
-              <Link href="/credits" className="">
-                <Button variant="ghost" size="sm" className="gap-1 px-2">
-                  <CreditCard className="h-3.5 w-3.5" />
-                  <span className="font-medium">{consultations}</span>
-                </Button>
-              </Link>
-            )}
+            <div className="flex items-center">
+              <UserButton />
+            </div>
 
             <Sheet>
               <SheetTrigger asChild>
@@ -208,7 +201,6 @@ const Navbar = ({ dbUser }) => {
                     Pricing
                   </Link>
 
-                  {/* Mobile credits link */}
                   {role === "PATIENT" && (
                     <Link href="/credits" className="flex items-center gap-2 hover:text-primary transition-colors py-2">
                       <CreditCard className="h-4 w-4" />
@@ -216,7 +208,6 @@ const Navbar = ({ dbUser }) => {
                     </Link>
                   )}
 
-                  {/* Add Notifications link to mobile menu */}
                   <Link 
                     href="/notifications" 
                     className="flex items-center gap-2 hover:text-primary transition-colors py-2"
@@ -233,12 +224,6 @@ const Navbar = ({ dbUser }) => {
                     {roleConfig.text}
                   </Link>
 
-                  <div className="pt-4 border-t border-gray-200 dark:border-gray-700 mt-4">
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-sm text-muted-foreground">Account</span>
-                      <UserButton />
-                    </div>
-                  </div>
                 </div>
               </SheetContent>
             </Sheet>

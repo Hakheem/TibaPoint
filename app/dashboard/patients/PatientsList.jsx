@@ -191,7 +191,7 @@ export default function PatientsList({ patients }) {
                               History
                             </h4>
                             <ScrollArea className="flex-1 pr-4 h-full">
-                              <div className="space-y-4 h-full">
+                              <div className="space-y-4 h-full overflow-auto ">
                                 {(
                                   patient.history &&
                                   [...patient.history].sort(

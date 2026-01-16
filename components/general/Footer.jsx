@@ -11,7 +11,7 @@ export default function Footer() {
         <div className="py-8 md:py-12">
           {/* Main Footer Content */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* Brand Column */}
+            {/* Brand Column */} 
             <div className="space-y-4">
               <div className="flex items-center gap-2">
                 <div className="relative h-8 w-8">

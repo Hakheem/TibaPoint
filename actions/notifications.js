@@ -225,7 +225,7 @@ export async function markNotificationAsRead(notificationId) {
       return { success: false, error: "User not found" };
     }
 
-    // Verify notification belongs to user
+    // Verify notification exists
     const notification = await db.notification.findUnique({
       where: { id: notificationId },
     });
@@ -234,7 +234,8 @@ export async function markNotificationAsRead(notificationId) {
       return { success: false, error: "Notification not found" };
     }
 
-    // Ensure the notification belongs to the authenticated user
+    // Ensure the notification belongs to the authenticated user ONLY
+    // Each role can only mark their own notifications as read
     if (notification.userId !== user.id) {
       return { success: false, error: "Unauthorized" };
     }
