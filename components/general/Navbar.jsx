@@ -3,7 +3,15 @@
 import React, { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/general/theme-toggle";
 import { Button } from "../ui/button";
-import { Menu, User, Calendar, Stethoscope, ShieldCheck, CreditCard, Bell } from "lucide-react";
+import {
+  Menu,
+  User,
+  Calendar,
+  Stethoscope,
+  ShieldCheck,
+  CreditCard,
+  Bell,
+} from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import {
@@ -13,29 +21,24 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  UserButton,
-} from "@clerk/nextjs"
+import { SignedIn, SignedOut, SignInButton, UserButton } from "@clerk/nextjs";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 
 const Navbar = ({ dbUser }) => {
   const [scrolled, setScrolled] = useState(false);
-  const [isClient, setIsClient] = useState(false); 
-  
+  const [isClient, setIsClient] = useState(false);
+
   const role = dbUser?.role || "UNASSIGNED";
   const credits = dbUser?.credits || 0;
   const consultations = Math.floor(credits / 2);
 
   useEffect(() => {
-    setIsClient(true); 
-    
+    setIsClient(true);
+
     const onScroll = () => {
       setScrolled(window.scrollY > 10);
     };
-    
+
     onScroll(); // Initial check
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
@@ -48,36 +51,36 @@ const Navbar = ({ dbUser }) => {
           href: "/appointments",
           text: "My Appointments",
           icon: <Calendar className="h-4 w-4" />,
-          variant: "secondary"
+          variant: "secondary",
         };
       case "DOCTOR":
         return {
           href: "/dashboard",
           text: "Dashboard",
           icon: <Stethoscope className="h-4 w-4" />,
-          variant: "secondary"
+          variant: "secondary",
         };
       case "ADMIN":
         return {
           href: "/admin",
           text: "Admin",
           icon: <ShieldCheck className="h-4 w-4" />,
-          variant: "secondary"
+          variant: "secondary",
         };
       default:
         return {
           href: "/onboarding",
           text: "Complete Profile",
           icon: <User className="h-4 w-4" />,
-          variant: "default"
+          variant: "default",
         };
     }
   };
 
   const roleConfig = getRoleConfig();
 
-  const headerClass = !isClient 
-    ? "fixed inset-x-0 top-0 z-50 bg-transparent" 
+  const headerClass = !isClient
+    ? "fixed inset-x-0 top-0 z-50 bg-transparent"
     : `fixed inset-x-0 top-0 z-50 transition-all ${
         scrolled
           ? "bg-white/70 dark:bg-gray-900/70 backdrop-blur shadow"
@@ -90,17 +93,18 @@ const Navbar = ({ dbUser }) => {
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2">
           <div className="relative h-8 w-8">
-            <Image 
-              src="/logo.png" 
-              alt="TibaPoint" 
-              fill 
-              className="object-contain rounded" 
+            <Image
+              src="/logo.png"
+              alt="TibaPoint"
+              fill
+              priority
+              className="object-contain rounded"
               sizes="32px"
             />
           </div>
           <span className="font-semibold text-lg">TibaPoint</span>
         </Link>
- 
+
         {/* Desktop Navigation */}
         <div className="hidden md:flex items-center gap-3">
           <ThemeToggle />
@@ -122,20 +126,18 @@ const Navbar = ({ dbUser }) => {
                   <CreditCard className="h-4 w-4" />
                   <span className="font-semibold">{consultations}</span>
                   <span className="text-xs text-muted-foreground">
-                    consultation{consultations !== 1 ? 's' : ''}
+                    consultation{consultations !== 1 ? "s" : ""}
                   </span>
                 </Button>
               </Link>
             )}
 
-            {/* Role-specific button */} 
+            {/* Role-specific button */}
             <Link href={roleConfig.href}>
-              <Button 
+              <Button
                 variant={roleConfig.variant}
                 className={`gap-2 ${
-                  roleConfig.variant === 'default' 
-                    ? 'bg-gradient-primary' 
-                    : ''
+                  roleConfig.variant === "default" ? "bg-gradient-primary" : ""
                 }`}
               >
                 {roleConfig.icon}
@@ -143,7 +145,7 @@ const Navbar = ({ dbUser }) => {
               </Button>
             </Link>
 
-             <NotificationBell />
+            <NotificationBell />
 
             <UserButton />
           </SignedIn>
@@ -162,7 +164,7 @@ const Navbar = ({ dbUser }) => {
           </SignedOut>
 
           <SignedIn>
-            <div className='scale-90'>
+            <div className="scale-90">
               <NotificationBell />
             </div>
 
@@ -181,11 +183,12 @@ const Navbar = ({ dbUser }) => {
                 <SheetHeader>
                   <SheetTitle className="flex items-center gap-2">
                     <div className="relative h-8 w-8">
-                      <Image 
-                        src="/logo.png" 
-                        alt="TibaPoint" 
-                        fill 
-                        className="object-contain" 
+                      <Image
+                        src="/logo.png"
+                        alt="TibaPoint"
+                        fill
+                        priority
+                        className="object-contain"
                         sizes="32px"
                       />
                     </div>
@@ -194,45 +197,52 @@ const Navbar = ({ dbUser }) => {
                 </SheetHeader>
 
                 <div className="mt-6 px-4 flex flex-col gap-4">
-                  <Link href="/" className="hover:text-primary transition-colors py-2">
+                  <Link
+                    href="/"
+                    className="hover:text-primary transition-colors py-2"
+                  >
                     Home
                   </Link>
-                  <Link href="/pricing" className="hover:text-primary transition-colors py-2">
+                  <Link
+                    href="/pricing"
+                    className="hover:text-primary transition-colors py-2"
+                  >
                     Pricing
                   </Link>
 
                   {role === "PATIENT" && (
-                    <Link href="/credits" className="flex items-center gap-2 hover:text-primary transition-colors py-2">
+                    <Link
+                      href="/credits"
+                      className="flex items-center gap-2 hover:text-primary transition-colors py-2"
+                    >
                       <CreditCard className="h-4 w-4" />
                       <span>{consultations} consultations available</span>
                     </Link>
                   )}
 
-                  <Link 
-                    href="/notifications" 
+                  <Link
+                    href="/notifications"
                     className="flex items-center gap-2 hover:text-primary transition-colors py-2"
                   >
                     <Bell className="h-4 w-4" />
                     Notifications
                   </Link>
 
-                  <Link 
-                    href={roleConfig.href} 
+                  <Link
+                    href={roleConfig.href}
                     className="flex items-center gap-2 hover:text-primary transition-colors py-2"
                   >
                     {roleConfig.icon}
                     {roleConfig.text}
                   </Link>
-
                 </div>
               </SheetContent>
             </Sheet>
           </SignedIn>
         </div>
       </nav>
-    </header> 
+    </header>
   );
 };
 
 export default Navbar;
-
